@@ -26,7 +26,7 @@ BOOST_MULT = 2.3
 BOOST_COST = 0.09
 INITIAL_LENGTH = 40
 GROW_PER_FOOD = 12
-FOOD_COUNT = 500
+FOOD_COUNT = 5
 # ==========================================
 
 
@@ -71,10 +71,8 @@ class Snake:
         self.boosting = False
         self.speed = BASE_SPEED
 
-        # last received input, e.g.: {"angle": 1.1, "boost": True}
         self.pending_input = {}
 
-        # positions history
         self.positions = deque()
         for _ in range(int(self.length_units // SEGMENT_SPACING) + 200):
             self.positions.appendleft((self.x, self.y))
