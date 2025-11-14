@@ -24,7 +24,6 @@ class UDPClient(asyncio.DatagramProtocol):
         }
         self.send(join_packet)
 
-        # Start sending INPUT updates periodically
         asyncio.create_task(self.send_input_loop())
 
     def datagram_received(self, data, addr):
@@ -35,6 +34,7 @@ class UDPClient(asyncio.DatagramProtocol):
             return
 
         print(f"[CLIENT] Received state with {len(msg.get('players', {}))} players")
+
 
     def send(self, packet: dict):
         """Helper to send JSON packets"""

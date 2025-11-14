@@ -32,6 +32,7 @@ class UDPServer(asyncio.DatagramProtocol):
             await asyncio.sleep(0.2)
 
             for packet in self.pending_packets:
+                print(packet)
                 match packet.get('type'):
                     case "JOIN":
                         self.game.add_player(packet.get('uuid'))
@@ -41,7 +42,6 @@ class UDPServer(asyncio.DatagramProtocol):
             self.pending_packets = []
             self.game.tick()
             state_packet = json.dumps(self.game.state()).encode('utf-8')
-            print(state_packet) 
             for addr in self.clients.values():
                 self.transport.sendto(state_packet, addr)
 
