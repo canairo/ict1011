@@ -17,17 +17,14 @@ class UDPClient(asyncio.DatagramProtocol):
         self.transport = transport
         print(f"[CLIENT] Connected as UUID {UUID}")
 
-        # Send initial JOIN packet
         join_packet = {
             "type": "JOIN",
             "uuid": UUID
         }
         self.send(join_packet)
-
         asyncio.create_task(self.send_input_loop())
 
     def datagram_received(self, data, addr):
-        """Handle game state updates from server"""
         try:
             msg = json.loads(data.decode("utf-8"))
         except Exception:
@@ -37,14 +34,12 @@ class UDPClient(asyncio.DatagramProtocol):
 
 
     def send(self, packet: dict):
-        """Helper to send JSON packets"""
         if not self.transport:
             return
         data = json.dumps(packet).encode("utf-8")
         self.transport.sendto(data)
 
     async def send_input_loop(self):
-        """Send periodic INPUT packets"""
         while True:
             self.angle += 0.3
             inp_packet = {

@@ -3,10 +3,11 @@ import uuid
 import asyncio
 import json
 from socket import *
+import time
 
 gen_uuid = lambda: str(uuid.uuid4())
 game = Game()
-
+TIMEOUT_LIMIT = 10
 
 class UDPServer(asyncio.DatagramProtocol):
     def __init__(self, game):
@@ -24,7 +25,7 @@ class UDPServer(asyncio.DatagramProtocol):
         except Exception:
             return
 
-        self.clients[pkt.get("uuid")] = addr
+        self.clients[pkt.get("uuid")] = {"addr": addr}
         self.pending_packets.append(pkt)
 
     async def tick_loop(self):
@@ -32,25 +33,38 @@ class UDPServer(asyncio.DatagramProtocol):
             await asyncio.sleep(0.2)
 
             for packet in self.pending_packets:
-                print(packet)
+                self.clients[packet.get("uuid")]["last_updated"] = time.time()
                 match packet.get('type'):
                     case "JOIN":
                         self.game.add_player(packet.get('uuid'))
                     case "INPUT":
                         self.game.input(packet.get('uuid'), packet.get('inp'))
 
+            inactive_users = []
+            for client in self.clients:
+                last_time = self.clients[client]["last_updated"]
+                time_elapsed = time.time() - last_time
+                if time_elapsed > TIMEOUT_LIMIT:
+                    inactive_users.append(client)
+
+            for user in inactive_users:
+                del self.clients[user]
+                self.game.remove_player(user)
+                print(f'[SERVER] {user} hasn\'t sent a message in 10 seconds, deleted...')
+
             self.pending_packets = []
             self.game.tick()
             state_packet = json.dumps(self.game.state()).encode('utf-8')
-            for addr in self.clients.values():
-                self.transport.sendto(state_packet, addr)
+            for client in self.clients:
+                print(f'[SERVER] sending to {client}')
+                self.transport.sendto(state_packet, self.clients[client]['addr'])
 
 async def main():
     from core import Game
     game = Game()
 
     loop = asyncio.get_running_loop()
-
+    print('[SERVER] started server, waiting for connections...')
     transport, protocol = await loop.create_datagram_endpoint(
         lambda: UDPServer(game),
         local_addr=("0.0.0.0", 9999)
