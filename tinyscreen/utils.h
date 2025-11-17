@@ -13,6 +13,13 @@ void serialf(const char *fmt, Args... args) {
   SerialUSB.println(buf);
 }
 
+const char* ip_to_str(IPAddress ip) {
+    static char buf[32];
+    sprintf(buf, "%d.%d.%d.%d",
+            (int)ip[0], (int)ip[1], (int)ip[2], (int)ip[3]);
+    return buf;
+}
+
 void read_line(char *buffer, int maxLen) {
   int i = 0;
   while (true) {

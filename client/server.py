@@ -26,6 +26,7 @@ class UDPServer(asyncio.DatagramProtocol):
             return
 
         if pkt.get("type") == "DISCOVER":
+            print(f"[SERVER] detected a DISCOVER pkt from {addr}")
             resp = json.dumps({"type": "DISCOVER_RECEIVED"}).encode()
             self.transport.sendto(resp, addr)
             return
