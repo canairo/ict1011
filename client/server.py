@@ -30,7 +30,7 @@ class UDPServer(asyncio.DatagramProtocol):
 
     async def tick_loop(self):
         while True:
-            await asyncio.sleep(0.2)
+            await asyncio.sleep(0.016)
 
             for packet in self.pending_packets:
                 self.clients[packet.get("uuid")]["last_updated"] = time.time()
