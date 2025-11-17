@@ -24,12 +24,11 @@ void setup() {
 
 void loop() {
     if (WiFi.status() != WL_CONNECTED) {
-        // connection is currently handled over serial
         prompt_and_connect(display);
     } else {
         display.clearScreen();
         display.setCursor(0, 0);
-        display.println("Connected!");
+        display.println("connected!");
         delay(5000);
     }
 }

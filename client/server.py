@@ -25,6 +25,11 @@ class UDPServer(asyncio.DatagramProtocol):
         except Exception:
             return
 
+        if pkt.get("type") == "DISCOVER":
+            resp = json.dumps({"type": "DISCOVER_RECEIVED"}).encode()
+            self.transport.sendto(resp, addr)
+            return
+
         self.clients[pkt.get("uuid")] = {"addr": addr}
         self.pending_packets.append(pkt)
 
