@@ -62,7 +62,10 @@ class UDPServer(asyncio.DatagramProtocol):
             self.game.tick()
             state_packet = json.dumps(self.game.state()).encode('utf-8')
             for client in self.clients:
-                print(f'[SERVER] sending to {client}')
+                print(f'{time.time()} [SERVER] sending to {client} at {self.clients[client]['addr']} {len(state_packet)}')
+                output = open('swag.json', 'wb')
+                output.write(state_packet)
+                output.close()
                 self.transport.sendto(state_packet, self.clients[client]['addr'])
 
 async def main():

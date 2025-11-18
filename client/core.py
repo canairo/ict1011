@@ -24,7 +24,7 @@ SEGMENT_SPACING = 6
 BASE_SPEED = 4.0
 BOOST_MULT = 2.3
 BOOST_COST = 0.09
-INITIAL_LENGTH = 40
+INITIAL_LENGTH = 5
 GROW_PER_FOOD = 12
 FOOD_COUNT = 5
 # ==========================================

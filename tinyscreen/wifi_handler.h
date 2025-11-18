@@ -89,8 +89,8 @@ bool prompt_and_connect(TinyScreen display) {
 bool find_server(IPAddress &serverIP, TinyScreen display) {
   udp.begin(1000);
   debug_msg("finding remote server...", display);
-  char packetBuffer[256];
-  char ReplyBuffer[256];
+  char packetBuffer[2048];
+  char ReplyBuffer[2048];
   strcpy(ReplyBuffer, "OK\n");
   IPAddress ip = WiFi.localIP();
   IPAddress mask = WiFi.subnetMask();
@@ -105,10 +105,12 @@ bool find_server(IPAddress &serverIP, TinyScreen display) {
   SerialUSB.println("beginning listener on port 1000");
   int loop = 0;
   while (!loop) {
+    memset(packetBuffer, 0, sizeof(packetBuffer));
     int packetSize = udp.parsePacket();
     if (packetSize)
     {
-      int len = udp.read(packetBuffer, 255);
+      int len = udp.read(packetBuffer, 2047);
+      serialf("received packet %s", packetBuffer);
       if (len > 0) packetBuffer[len] = 0;
       if (strstr(packetBuffer, "DISCOVER_RECEIVED")) {
         serverIP = udp.remoteIP();
@@ -117,7 +119,14 @@ bool find_server(IPAddress &serverIP, TinyScreen display) {
             udp.remotePort()
         );
         debug_msg("found remote server!", display);
-        return true;
+        serialf("joining remote server...");
+        udp.beginPacket(serverIP, 9999);
+        udp.print("{\"type\": \"JOIN\", \"uuid\": \"meowboy\"}");
+        udp.endPacket();
+      } else {
+        udp.beginPacket(udp.remoteIP(), udp.remotePort());
+        udp.print(ReplyBuffer);
+        udp.endPacket();
       }
     }
   } 
