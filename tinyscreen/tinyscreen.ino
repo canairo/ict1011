@@ -30,33 +30,7 @@ void loop() {
     display.setCursor(0,0);
     if (WiFi.status() != WL_CONNECTED) {
         prompt_and_connect(display);
-    }
-    else {
-      udp.begin(1000);
-      SerialUSB.println("beginning listener on port 1000");
-      while (true) {
-        int packetSize = udp.parsePacket();
-        if (packetSize)
-        {
-          SerialUSB.print("Received packet of size ");
-          SerialUSB.println(packetSize);
-          SerialUSB.print("From ");
-          IPAddress remoteIp = udp.remoteIP();
-          SerialUSB.print(remoteIp);
-          SerialUSB.print(", port ");
-          SerialUSB.println(udp.remotePort());
-
-          int len = udp.read(packetBuffer, 255);
-          if (len > 0) packetBuffer[len] = 0;
-          SerialUSB.println("Contents:");
-          SerialUSB.println(packetBuffer);
-          
-          udp.beginPacket(udp.remoteIP(), udp.remotePort());
-          udp.write(ReplyBuffer);
-          udp.endPacket();
-        }
-      } 
-    }
+    } else find_server(remote_ip);
     delay(5000);
     display.println("rawr");
 }

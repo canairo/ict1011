@@ -96,6 +96,9 @@ bool prompt_and_connect(TinyScreen display) {
 
 bool find_server(IPAddress &serverIP) {
   udp.begin(1000);
+  char packetBuffer[256];
+  char ReplyBuffer[256];
+  strcpy(ReplyBuffer, "OK\n");
   IPAddress ip = WiFi.localIP();
   IPAddress mask = WiFi.subnetMask();
   for (int i = 0; i<4; i++) {
@@ -106,24 +109,28 @@ bool find_server(IPAddress &serverIP) {
   udp.beginPacket(broadcast_ip, 9999);
   udp.print("{\"type\": \"DISCOVER\", \"uuid\": \"TINYSCR\"}");
   udp.endPacket();
-  /*
-  unsigned long start = millis();
-  SerialUSB.println("listening for packets > ");
-  while (millis() - start < 150000) {
+  SerialUSB.println("beginning listener on port 1000");
+  while (true) {
     int packetSize = udp.parsePacket();
-    if (packetSize) {
-      int len = udp.read(packet, sizeof(packet)-1);
-      packet[len] = 0; //nullterm
+    if (packetSize)
+    {
+      SerialUSB.print("Received packet of size ");
+      SerialUSB.println(packetSize);
+      SerialUSB.print("From ");
+      IPAddress remoteIp = udp.remoteIP();
+      SerialUSB.print(remoteIp);
+      SerialUSB.print(", port ");
+      SerialUSB.println(udp.remotePort());
 
-      if (strstr(packet, "DISCOVER_REPLY")) {
-        serverIP = udp.remoteIP();
-        SerialUSB.print("\nfound remote ip :");
-        SerialUSB.println(serverIP);
-        return true;
-      }
+      int len = udp.read(packetBuffer, 255);
+      if (len > 0) packetBuffer[len] = 0;
+      SerialUSB.println("Contents:");
+      SerialUSB.println(packetBuffer);
+      
+      udp.beginPacket(udp.remoteIP(), udp.remotePort());
+      udp.write(ReplyBuffer);
+      udp.endPacket();
     }
-  }
-  SerialUSB.println("no packets found...");
+  } 
   return false;
-  */
 }
