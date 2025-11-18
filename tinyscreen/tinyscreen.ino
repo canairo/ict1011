@@ -13,7 +13,6 @@ void setup() {
     Wire.begin();
     SerialUSB.begin(9600);
     while (!SerialUSB);
-
     WiFi.setPins(8, 2, A3, -1); // necessary for whatever reason
     display.begin();
     display.setBrightness(10);
