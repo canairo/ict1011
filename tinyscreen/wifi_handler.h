@@ -106,7 +106,7 @@ bool find_server(IPAddress &serverIP) {
   udp.beginPacket(broadcast_ip, 9999);
   udp.print("{\"type\": \"DISCOVER\", \"uuid\": \"TINYSCR\"}");
   udp.endPacket();
-
+  /*
   unsigned long start = millis();
   SerialUSB.println("listening for packets > ");
   while (millis() - start < 150000) {
@@ -125,4 +125,5 @@ bool find_server(IPAddress &serverIP) {
   }
   SerialUSB.println("no packets found...");
   return false;
+  */
 }
