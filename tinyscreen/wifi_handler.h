@@ -16,9 +16,7 @@ char packet[256];
 IPAddress broadcast_ip;
 
 bool prompt_and_connect(TinyScreen display) {
-    display.clearScreen();
-    display.setCursor(0, 0);
-    display.println("meowing for the wifi...");
+    debug_msg("meowing for wifi", display); 
     SerialUSB.println("\nmeowing for networks...");
 
     int num_networks = WiFi.scanNetworks();
@@ -65,9 +63,7 @@ bool prompt_and_connect(TinyScreen display) {
     }
     
     serialf("connecting to %s...", ssid);
-    display.clearScreen();
-    display.setCursor(0, 0);
-    display.println("da connecterrr...");
+    debug_msg("connecting...", display);
 
     WiFi.disconnect();
     WiFi.begin(ssid, pass);
@@ -80,22 +76,19 @@ bool prompt_and_connect(TinyScreen display) {
 
     if (WiFi.status() != WL_CONNECTED) {
         SerialUSB.println("\nkena :(");
-        display.clearScreen();
-        display.setCursor(0, 0);
-        display.println("connection kena :(");
+        debug_msg("connection kena...", display);
         delay(2000);
         return false;
     } else {
         serialf("yay! ip: %s", ip_to_str(WiFi.localIP()));
-        display.clearScreen();
-        display.setCursor(0, 0);
-        display.println("wahoo!");
+        debug_msg("connected to wifi!", display);
         return true;
     }
 }
 
-bool find_server(IPAddress &serverIP) {
+bool find_server(IPAddress &serverIP, TinyScreen display) {
   udp.begin(1000);
+  debug_msg("finding remote server...", display);
   char packetBuffer[256];
   char ReplyBuffer[256];
   strcpy(ReplyBuffer, "OK\n");
@@ -110,27 +103,22 @@ bool find_server(IPAddress &serverIP) {
   udp.print("{\"type\": \"DISCOVER\", \"uuid\": \"TINYSCR\"}");
   udp.endPacket();
   SerialUSB.println("beginning listener on port 1000");
-  while (true) {
+  int loop = 0;
+  while (!loop) {
     int packetSize = udp.parsePacket();
     if (packetSize)
     {
-      SerialUSB.print("Received packet of size ");
-      SerialUSB.println(packetSize);
-      SerialUSB.print("From ");
-      IPAddress remoteIp = udp.remoteIP();
-      SerialUSB.print(remoteIp);
-      SerialUSB.print(", port ");
-      SerialUSB.println(udp.remotePort());
-
       int len = udp.read(packetBuffer, 255);
       if (len > 0) packetBuffer[len] = 0;
-      SerialUSB.println("Contents:");
-      SerialUSB.println(packetBuffer);
-      
-      udp.beginPacket(udp.remoteIP(), udp.remotePort());
-      udp.write(ReplyBuffer);
-      udp.endPacket();
+      if (strstr(packetBuffer, "DISCOVER_RECEIVED")) {
+        serverIP = udp.remoteIP();
+        serialf("found remote IP: %s at port %d", 
+            ip_to_str(serverIP),
+            udp.remotePort()
+        );
+        debug_msg("found remote server!", display);
+        return true;
+      }
     }
   } 
-  return false;
 }

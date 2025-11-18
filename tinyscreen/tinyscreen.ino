@@ -29,9 +29,13 @@ void loop() {
     display.clearScreen();
     display.setCursor(0,0);
     if (WiFi.status() != WL_CONNECTED) {
-        prompt_and_connect(display);
-    } else find_server(remote_ip);
-    delay(5000);
-    display.println("rawr");
+      prompt_and_connect(display);
+    } else if (remote_ip == IPAddress(69, 69, 69, 69)) { 
+      find_server(remote_ip, display);
+    }
+    else {
+      debug_msg("everything's all good!", display);
+    }
+    delay(1000);
 }
 

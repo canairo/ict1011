@@ -13,6 +13,12 @@ void serialf(const char *fmt, Args... args) {
   SerialUSB.println(buf);
 }
 
+void debug_msg(char *msg, TinyScreen display) {
+  display.clearScreen();
+  display.setCursor(0, 0);
+  display.println(msg);
+}
+
 const char* ip_to_str(IPAddress ip) {
     static char buf[32];
     sprintf(buf, "%d.%d.%d.%d",
