@@ -73,10 +73,10 @@ class UDPServer(asyncio.DatagramProtocol):
                 print(f'{time.time()} [SERVER] sending to {client} at {self.clients[client]['addr']} {len(state_packet)}')
                 if client == "meowboy":
                     state_packet = packets.compress_packet(self.game.state())
-                    print(state_packet)
                     print(f'[SERVER] sending compressed packet w/ len {len(state_packet)}')
                 else:
-                    state_packet = state_packet.encode()
+                    print(type(state_packet), state_packet)
+                    state_packet = state_packet.encode() if type(state_packet) == str else state_packet
                 self.transport.sendto(state_packet, self.clients[client]['addr'])
 
 async def main():
