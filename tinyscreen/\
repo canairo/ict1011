@@ -5,7 +5,6 @@
 #include <string.h>
 
 #include "wifi_handler.h"
-#include "game_handler.h"
 
 typedef enum {
   NO_WIFI,
@@ -57,19 +56,12 @@ void loop() {
       );
       hexdump(received_packet, packet_size);
     }
-  } else {
-
-    // i would want to clear the entire buffer
-    // but i am worried that would take too long
-    // so we just set the first byte as null
-    // happy happy liao
-    received_packet[0] = 0;
-
   }
 
   switch (state) {
     case FINDING_SERVER:
       broadcast_packet(udp);
+      serialf("current packet > %s\n", received_packet);
       remote_ip = receive_discover(udp, received_packet);
       if (remote_ip != IPAddress(69, 69, 69, 69)) {
         join_server(udp, remote_ip);
@@ -78,13 +70,8 @@ void loop() {
       break;
 
     case CONNECTED_TO_SERVER:
-      if (assert_game_data(received_packet)) {
-        serialf("received game state > \n");
-        hexdump(received_packet, packet_size);
-        serialf("\n");
-        decompress_packet_into_game_state(game_state, received_packet, packet_size);
-        serialf("%s", debug_state(game_state));
-      }
+      // do stuff here with the packet
+      debug = 1;
       break;
   }
 }

@@ -42,21 +42,17 @@ typedef struct {
 
 // ================= HELPER: READING =================
 
-// Helper to read bytes and advance pointer
 #define READ_VAL(ptr, type) (*(type*)read_and_advance(&ptr, sizeof(type)))
 #define SWAP_UINT16(x) ((((x) & 0xFF) << 8) | (((x) >> 8) & 0xFF))
 
-// Helper to safely read memory and move the cursor
 void* read_and_advance(uint8_t** cursor, size_t bytes) {
     void* current = *cursor;
     *cursor += bytes;
     return current;
 }
 
-// Helper to read Big Endian Float (Network Byte Order)
 float read_float_be(uint8_t** cursor) {
     uint32_t temp = READ_VAL(*cursor, uint32_t);
-    // Swap bytes for Big Endian if on Little Endian machine (standard x86/ARM)
     uint32_t swapped = ((temp >> 24) & 0xff) | 
                        ((temp << 8) & 0xff0000) | 
                        ((temp >> 8) & 0xff00) | 
@@ -74,24 +70,19 @@ uint16_t read_short_be(uint8_t** cursor) {
 
 // ================= CORE FUNCTION =================
 
-GameState* decompress_packet(uint8_t* data, size_t len) {
-    uint8_t* cursor = data;
-    GameState* state = (GameState*)malloc(sizeof(GameState));
-
-    // 1. READ PLAYERS
+void decompress_packet_into_game_state(GameState* state, uint8_t* data, size_t len) {
+    uint8_t* cursor = data + 8; // skip GAMEDATA header;
     state->player_count = read_short_be(&cursor);
     state->players = (Snake*)malloc(sizeof(Snake) * state->player_count);
 
     for (int i = 0; i < state->player_count; i++) {
         Snake* s = &state->players[i];
 
-        // UUID
         uint8_t uuid_len = READ_VAL(cursor, uint8_t);
         s->uuid = (char*)malloc(uuid_len + 1);
         memcpy(s->uuid, read_and_advance(&cursor, uuid_len), uuid_len);
         s->uuid[uuid_len] = '\0'; // Null terminate
 
-        // Properties
         s->x = read_float_be(&cursor);
         s->y = read_float_be(&cursor);
         
@@ -101,7 +92,6 @@ GameState* decompress_packet(uint8_t* data, size_t len) {
         s->boost = READ_VAL(cursor, uint8_t);
         s->length = read_float_be(&cursor);
 
-        // Segments
         s->segment_count = read_short_be(&cursor);
         s->segments = (Vector2*)malloc(sizeof(Vector2) * s->segment_count);
         
@@ -111,7 +101,6 @@ GameState* decompress_packet(uint8_t* data, size_t len) {
         }
     }
 
-    // 2. READ FOOD
     state->food_count = read_short_be(&cursor);
     state->foods = (Food*)malloc(sizeof(Food) * state->food_count);
 
@@ -120,8 +109,66 @@ GameState* decompress_packet(uint8_t* data, size_t len) {
         state->foods[i].y = read_float_be(&cursor);
         state->foods[i].size = READ_VAL(cursor, uint8_t);
     }
+}
 
-    return state;
+const char* debug_state(GameState* state) {
+    static char buf[8192];
+    buf[0] = '\0';
+    size_t used = 0;
+    int n;
+
+    if (!state) {
+        snprintf(buf, sizeof(buf), "<NULL GameState>");
+        return buf;
+    }
+
+    n = snprintf(buf + used, sizeof(buf) - used, "GameState:\n  Players: %d\n", state->player_count);
+    used += n;
+
+    for (int i = 0; i < state->player_count; i++) {
+        Snake* s = &state->players[i];
+
+        n = snprintf(buf + used, sizeof(buf) - used,
+            "  Player %d:\n"
+            "    UUID: %s\n"
+            "    Pos: (%.2f, %.2f)\n"
+            "    Angle: %.2f rad\n"
+            "    Boost: %d\n"
+            "    Length: %.2f\n"
+            "    Segments: %d\n",
+            i, s->uuid, s->x, s->y, s->angle, s->boost, s->length, s->segment_count);
+        used += n;
+
+        for (int j = 0; j < s->segment_count; j++) {
+            n = snprintf(buf + used, sizeof(buf) - used,
+                "      Segment %d: (%.2f, %.2f)\n",
+                j, s->segments[j].x, s->segments[j].y);
+            used += n;
+
+            if (used >= sizeof(buf)) {
+                // truncated
+                buf[sizeof(buf) - 1] = '\0';
+                return buf;
+            }
+        }
+    }
+
+    n = snprintf(buf + used, sizeof(buf) - used, "  Food: %d\n", state->food_count);
+    used += n;
+
+    for (int i = 0; i < state->food_count; i++) {
+        n = snprintf(buf + used, sizeof(buf) - used,
+            "    Food %d: Pos(%.2f, %.2f) Size %d\n",
+            i, state->foods[i].x, state->foods[i].y, state->foods[i].size);
+        used += n;
+
+        if (used >= sizeof(buf)) {
+            buf[sizeof(buf) - 1] = '\0';
+            return buf;
+        }
+    }
+
+    return buf;
 }
 
 // ================= CLEANUP =================

@@ -5,6 +5,7 @@ def compress_packet(state_dict):
     """
     Compresses the Game State dict into a custom binary format.
     Schema:
+    [GAMEDATA HEADER]
     [Num Players: uint16]
     FOR EACH PLAYER:
        [UUID Len: uint8] [UUID Bytes]
@@ -54,5 +55,6 @@ def compress_packet(state_dict):
     
     for f in food_list:
         data.extend(struct.pack("!ffB", f["x"], f["y"], f["size"]))
-        
-    return bytes(data)
+    
+    # funny little header
+    return b'GAMEDATA' + bytes(data)

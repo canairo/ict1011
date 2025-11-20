@@ -107,6 +107,18 @@ void join_server(WiFiUDP udp, IPAddress remote_ip) {
   udp.endPacket();
 }
 
+bool assert_game_data(char* received_packet) {
+  int res = strncmp(received_packet, "GAMEDATA", 8);
+  /*
+  serialf("compared %s to %s: result %d",
+      "(GAMEDATA)",
+      received_packet,
+      res
+  );
+  */
+  return !res;
+}
+
 /* 
 bool find_server(IPAddress &serverIP, TinyScreen display) {
   debug_msg("finding remote server...", display);
