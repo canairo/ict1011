@@ -1,4 +1,9 @@
 #!/bin/bash
-arduino-cli compile --fqbn TinyCircuits:samd:tinyscreen .
+
+arduino-cli compile \
+  --fqbn TinyCircuits:samd:tinyscreen \
+  --build-path build \
+  .
+
 arduino-cli upload -p /dev/ttyACM? --fqbn TinyCircuits:samd:tinyscreen .
 arduino-cli monitor -p /dev/ttyACM? -c 9600

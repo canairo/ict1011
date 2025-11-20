@@ -76,7 +76,7 @@ bool prompt_and_connect(TinyScreen display) {
         delay(2000);
         return false;
     } else {
-        serialf("yay! ip: %s", ip_to_str(WiFi.localIP()));
+        serialf("yay! ip: %s\n", ip_to_str(WiFi.localIP()));
         debug_msg("connected to wifi!", display);
         return true;
     }
@@ -95,7 +95,11 @@ void broadcast_packet(WiFiUDP udp) {
 }
 
 IPAddress receive_discover(WiFiUDP udp, char* received_packet) {
+  serialf("[debug] scanning packet %s\n", received_packet);
   if (strstr(received_packet, "DISCOVER_RECEIVED")) {
+    serialf("[debug] successfully received DISCOVER_RECEIVED packet from %s.\n",
+        ip_to_str(udp.remoteIP())      
+    );
     return udp.remoteIP();
   }
   return IPAddress(69, 69, 69, 69); // sentinel

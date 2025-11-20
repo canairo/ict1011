@@ -1,3 +1,8 @@
+// most of this is vibecoded
+// unfortunately the bytepacked struct format is really nice and cool
+// but coming up with the schema, packing and unpacking would've just taken me too long
+// in another life i would've written it myself... another life where this project isn't due in 5 days and i still don't have a snake rendered on the tinyscreen.
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -75,6 +80,7 @@ void decompress_packet_into_game_state(GameState* state, uint8_t* data, size_t l
     state->player_count = read_short_be(&cursor);
     state->players = (Snake*)malloc(sizeof(Snake) * state->player_count);
 
+    serialf("[debug] starting to decompress >\n");
     for (int i = 0; i < state->player_count; i++) {
         Snake* s = &state->players[i];
 
@@ -82,19 +88,26 @@ void decompress_packet_into_game_state(GameState* state, uint8_t* data, size_t l
         s->uuid = (char*)malloc(uuid_len + 1);
         memcpy(s->uuid, read_and_advance(&cursor, uuid_len), uuid_len);
         s->uuid[uuid_len] = '\0'; // Null terminate
-
+        serialf("[debug] created snake w/ uuid %s\n", s->uuid);
         s->x = read_float_be(&cursor);
         s->y = read_float_be(&cursor);
         
+        serialf("[debug] successfully scanned x=%f and y=%f",
+            s->x, s->y
+        );
         uint16_t raw_angle = read_short_be(&cursor);
         s->angle = ((float)raw_angle / 65535.0f) * (2.0f * M_PI); // Unmap
-        
+       
+        serialf("[debug] successfully scanned angle=%f", s->angle);
+
         s->boost = READ_VAL(cursor, uint8_t);
         s->length = read_float_be(&cursor);
-
+        serialf("[debug] successfully scanned boost=%d and length=%d",
+            s->boost,
+            s->length
+        );
         s->segment_count = read_short_be(&cursor);
         s->segments = (Vector2*)malloc(sizeof(Vector2) * s->segment_count);
-        
         for (int j = 0; j < s->segment_count; j++) {
             s->segments[j].x = read_float_be(&cursor);
             s->segments[j].y = read_float_be(&cursor);

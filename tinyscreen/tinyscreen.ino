@@ -15,7 +15,7 @@ typedef enum {
 
 WiFiUDP udp;
 char received_packet[2048];
-int debug = 0;
+int debug = 1;
 State state;
 GameState* game_state;
 
@@ -34,6 +34,7 @@ void setup() {
     display.setCursor(0, 0);
     state = NO_WIFI;
     GameState* game_state = (GameState*)malloc(sizeof(GameState));
+    serialf("allocated game_state at %p\n", game_state);
     delay(2000);
 }
 
@@ -73,6 +74,9 @@ void loop() {
       remote_ip = receive_discover(udp, received_packet);
       if (remote_ip != IPAddress(69, 69, 69, 69)) {
         join_server(udp, remote_ip);
+        serialf("found remote ip at %s\n",
+          ip_to_str(remote_ip)
+        );
         state = CONNECTED_TO_SERVER;
       }
       break;
@@ -82,7 +86,8 @@ void loop() {
         serialf("received game state > \n");
         hexdump(received_packet, packet_size);
         serialf("\n");
-        decompress_packet_into_game_state(game_state, received_packet, packet_size);
+        decompress_packet_into_game_state(game_state, (uint8_t*)received_packet, packet_size);
+        serialf("successfully decompressed game state\n");
         serialf("%s", debug_state(game_state));
       }
       break;
