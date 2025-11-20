@@ -3,10 +3,13 @@
 #include <TinyScreen.h>
 #include <WiFi101.h>
 #include <string.h>
+#include <WiFiUdp.h>
 
 #include "wifi_handler.h"
 #include "game_handler.h"
 #include "renderer.h"
+#include "utils.h"
+#include "wifi_secrets.h"
 
 typedef enum {
   NO_WIFI,

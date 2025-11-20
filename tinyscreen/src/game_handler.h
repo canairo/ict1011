@@ -1,3 +1,9 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
+#include <math.h>
+
 #ifndef GAME_HANDLER_H
 #define GAME_HANDLER_H
 
@@ -36,7 +42,7 @@ typedef struct {
 void safe_read(uint8_t** cursor, void* dest, size_t size);
 void skip_bytes(uint8_t** cursor, size_t size);
 void decompress_packet_into_game_state(GameState* state, uint8_t* data, size_t len);
-const char* debug-state(GameState* state);
+const char* debug_state(GameState* state);
 void free_gamestate_contents(GameState* state);
 
 #endif // GAME_HANDLER_H

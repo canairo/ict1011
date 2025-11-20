@@ -1,6 +1,16 @@
 #!/bin/bash
+# Set variables
+FQBN="TinyCircuits:samd:tinyscreen"
+PORT="/dev/ttyACM0"   # adjust if needed
+BUILD_DIR="build"
 
-arduino-cli compile --fqbn TinyCircuits:samd:tinyscreen .
-echo "[make] dont forget to turn the fucking circuit off dummy"
-arduino-cli upload -p /dev/ttyACM? --fqbn TinyCircuits:samd:tinyscreen .
-arduino-cli monitor -p /dev/ttyACM? -c 9600
+# Compile
+arduino-cli compile --fqbn $FQBN --build-path $BUILD_DIR src/
+echo "[making] dont forget to unplug it"
+
+# Upload
+arduino-cli upload -p $PORT --fqbn $FQBN --input-dir $BUILD_DIR
+
+# Monitor
+arduino-cli monitor -p $PORT -c 9600
+

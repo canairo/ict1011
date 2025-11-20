@@ -1,4 +1,9 @@
 #include "game_handler.h"
+#include <Wire.h>
+#include <SPI.h>
+#include <TinyScreen.h>
+#include <WiFi101.h>
+#include <string.h>
 
 #define SCREEN_W 96
 #define SCREEN_H 64

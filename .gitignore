@@ -1,4 +1,5 @@
-tinyscreen/wifi_secrets.h
+tinyscreen/src/wifi_secrets.cpp
+tinyscreen/include/wifi_secrets.h
 tinyscreen/build
 
 
