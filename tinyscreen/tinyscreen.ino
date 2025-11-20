@@ -34,7 +34,7 @@ void setup() {
     display.setCursor(0, 0);
     state = NO_WIFI;
     GameState* game_state = (GameState*)malloc(sizeof(GameState));
-    serialf("allocated game_state at %p\n", game_state);
+    serialf("[debug] allocated game_state at %p\n", game_state);
     delay(2000);
 }
 
@@ -52,11 +52,12 @@ void loop() {
     int read_amt = (packet_size > 2048) ? 2048 : packet_size;
     int len = udp.read(received_packet, packet_size);
     if (debug) {
-      serialf("\nreceived packet from %d:%d\n",
+      serialf("\n[debug] received packet from %s:%d\n------\n",
           ip_to_str(udp.remoteIP()),
           udp.remotePort()
       );
       hexdump(received_packet, packet_size);
+      serialf("\n------\n");
     }
   } else {
 
@@ -74,7 +75,7 @@ void loop() {
       remote_ip = receive_discover(udp, received_packet);
       if (remote_ip != IPAddress(69, 69, 69, 69)) {
         join_server(udp, remote_ip);
-        serialf("found remote ip at %s\n",
+        serialf("[debug] found remote ip at %s\n",
           ip_to_str(remote_ip)
         );
         state = CONNECTED_TO_SERVER;
@@ -83,11 +84,11 @@ void loop() {
 
     case CONNECTED_TO_SERVER:
       if (assert_game_data(received_packet)) {
-        serialf("received game state > \n");
+        serialf("[debug] received game state > \n");
         hexdump(received_packet, packet_size);
         serialf("\n");
         decompress_packet_into_game_state(game_state, (uint8_t*)received_packet, packet_size);
-        serialf("successfully decompressed game state\n");
+        serialf("[debug] successfully decompressed game state\n");
         serialf("%s", debug_state(game_state));
       }
       break;

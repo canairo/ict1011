@@ -13,7 +13,7 @@
 
 bool prompt_and_connect(TinyScreen display) {
     debug_msg("meowing for wifi", display); 
-    SerialUSB.println("\nmeowing for networks...");
+    SerialUSB.println("\n[debug] meowing for networks...");
 
     int num_networks = WiFi.scanNetworks();
     if (num_networks == 0) {
@@ -31,7 +31,7 @@ bool prompt_and_connect(TinyScreen display) {
         if (!strcmp(WiFi.SSID(i), credentials[j][0])) {
           snprintf(ssid, sizeof(ssid) - 1, "%s", credentials[j][0]);
           snprintf(pass, sizeof(pass) - 1, "%s", credentials[j][1]);
-          serialf("found stored credentials %s and %s", ssid, pass);
+          serialf("[debug] found stored credentials %s and %s\n", ssid, pass);
         }
       }
     }
@@ -97,7 +97,7 @@ void broadcast_packet(WiFiUDP udp) {
 IPAddress receive_discover(WiFiUDP udp, char* received_packet) {
   serialf("[debug] scanning packet %s\n", received_packet);
   if (strstr(received_packet, "DISCOVER_RECEIVED")) {
-    serialf("[debug] successfully received DISCOVER_RECEIVED packet from %s.\n",
+    serialf("[debug] successfully received DISCOVER_RECEIVED packet from %s\n",
         ip_to_str(udp.remoteIP())      
     );
     return udp.remoteIP();
