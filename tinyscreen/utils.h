@@ -10,13 +10,19 @@ template <typename... Args>
 void serialf(const char *fmt, Args... args) {
   char buf[128];
   snprintf(buf, sizeof(buf), fmt, args...);
-  SerialUSB.println(buf);
+  SerialUSB.print(buf);
 }
 
 void debug_msg(char *msg, TinyScreen display) {
   display.clearScreen();
   display.setCursor(0, 0);
   display.println(msg);
+}
+
+void hexdump(char *buf, int size) {
+  for (int i = 0; i<size; i++) {
+    serialf("%02x", buf[i]);
+  }
 }
 
 const char* ip_to_str(IPAddress ip) {

@@ -4,6 +4,7 @@ import asyncio
 import json
 from socket import *
 import time
+import packets
 
 gen_uuid = lambda: str(uuid.uuid4())
 game = Game()
@@ -60,12 +61,14 @@ class UDPServer(asyncio.DatagramProtocol):
 
             self.pending_packets = []
             self.game.tick()
-            state_packet = json.dumps(self.game.state()).encode('utf-8')
+            state_packet = json.dumps(self.game.state())
             for client in self.clients:
                 print(f'{time.time()} [SERVER] sending to {client} at {self.clients[client]['addr']} {len(state_packet)}')
-                output = open('swag.json', 'wb')
-                output.write(state_packet)
-                output.close()
+                if client == "meowboy":
+                    state_packet = packets.compress_packet(self.game.state())
+                    print(f'[SERVER] sending compressed packet w/ len {len(state_packet)}')
+                else:
+                    state_packet = state_packet.encode()
                 self.transport.sendto(state_packet, self.clients[client]['addr'])
 
 async def main():

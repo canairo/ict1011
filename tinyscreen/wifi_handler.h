@@ -62,7 +62,7 @@ bool prompt_and_connect(TinyScreen display) {
       }
     }
     
-    serialf("connecting to %s...", ssid);
+    serialf("connecting to %s...\n", ssid);
     debug_msg("connecting...", display);
 
     WiFi.disconnect();
@@ -109,12 +109,17 @@ bool find_server(IPAddress &serverIP, TinyScreen display) {
     int packetSize = udp.parsePacket();
     if (packetSize)
     {
-      int len = udp.read(packetBuffer, 2047);
-      serialf("received packet %s", packetBuffer);
+      int read_amt = (packetSize > 2048) ? 2048 : packetSize;
+      int len = udp.read(packetBuffer, packetSize);
+      serialf("\nreceived packet from %d:%d\n",
+          ip_to_str(udp.remoteIP()),
+          udp.remotePort()
+      );
+      hexdump(packetBuffer, packetSize);
       if (len > 0) packetBuffer[len] = 0;
       if (strstr(packetBuffer, "DISCOVER_RECEIVED")) {
         serverIP = udp.remoteIP();
-        serialf("found remote IP: %s at port %d", 
+        serialf("found remote IP: %s at port %d\n", 
             ip_to_str(serverIP),
             udp.remotePort()
         );
