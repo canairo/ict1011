@@ -27,9 +27,17 @@ class UDPServer(asyncio.DatagramProtocol):
             return
 
         if pkt.get("type") == "DISCOVER":
-            print(f"[SERVER] detected a DISCOVER pkt from {addr}")
+            print(f"[SERVER] received a DISCOVER pkt from {addr}")
             resp = json.dumps({"type": "DISCOVER_RECEIVED"}).encode()
             self.transport.sendto(resp, addr)
+            return
+
+        if pkt.get("type") == "JOIN":
+            # lord above please just forgive me for this fucking nonsense.
+            print(f'[SERVER] received a JOIN packet from {addr}')
+            self.game.add_player(pkt.get('uuid'))
+            self.clients[pkt.get("uuid")] = {"addr": addr}
+            self.clients[pkt.get("uuid")]["last_updated"] = time.time()
             return
 
         self.clients[pkt.get("uuid")] = {"addr": addr}
@@ -42,8 +50,6 @@ class UDPServer(asyncio.DatagramProtocol):
             for packet in self.pending_packets:
                 self.clients[packet.get("uuid")]["last_updated"] = time.time()
                 match packet.get('type'):
-                    case "JOIN":
-                        self.game.add_player(packet.get('uuid'))
                     case "INPUT":
                         self.game.input(packet.get('uuid'), packet.get('inp'))
 
@@ -54,6 +60,7 @@ class UDPServer(asyncio.DatagramProtocol):
                 if time_elapsed > TIMEOUT_LIMIT:
                     inactive_users.append(client)
 
+            # why this loop not integrated sia ^
             for user in inactive_users:
                 del self.clients[user]
                 self.game.remove_player(user)

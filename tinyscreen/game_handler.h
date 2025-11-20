@@ -45,85 +45,92 @@ typedef struct {
     Food* foods;       // Array of Food
 } GameState;
 
-// ================= HELPER: READING =================
+// ================= HELPER: SAFE READING =================
 
-#define READ_VAL(ptr, type) (*(type*)read_and_advance(&ptr, sizeof(type)))
-#define SWAP_UINT16(x) ((((x) & 0xFF) << 8) | (((x) >> 8) & 0xFF))
-
-void* read_and_advance(uint8_t** cursor, size_t bytes) {
-    void* current = *cursor;
-    *cursor += bytes;
-    return current;
+// Reads 'size' bytes into 'dest', then advances cursor.
+// Uses memcpy to prevent ARM HardFaults on unaligned memory.
+void safe_read(uint8_t** cursor, void* dest, size_t size) {
+    memcpy(dest, *cursor, size);
+    *cursor += size;
 }
 
-float read_float_be(uint8_t** cursor) {
-    uint32_t temp = READ_VAL(*cursor, uint32_t);
-    uint32_t swapped = ((temp >> 24) & 0xff) | 
-                       ((temp << 8) & 0xff0000) | 
-                       ((temp >> 8) & 0xff00) | 
-                       ((temp << 24) & 0xff000000);
-    float res;
-    memcpy(&res, &swapped, sizeof(float));
-    return res;
-}
-
-// Helper to read Big Endian Short
-uint16_t read_short_be(uint8_t** cursor) {
-    uint16_t temp = READ_VAL(*cursor, uint16_t);
-    return SWAP_UINT16(temp);
+// Advances cursor to skip padding
+void skip_bytes(uint8_t** cursor, size_t size) {
+    *cursor += size;
 }
 
 // ================= CORE FUNCTION =================
 
 void decompress_packet_into_game_state(GameState* state, uint8_t* data, size_t len) {
-    uint8_t* cursor = data + 8; // skip GAMEDATA header;
-    state->player_count = read_short_be(&cursor);
+    // Offset 8: GAMEDATA header ends.
+    uint8_t* cursor = data + 8; 
+
+    // 1. Player Count
+    safe_read(&cursor, &state->player_count, sizeof(uint16_t));
+    skip_bytes(&cursor, 2); // Skip 2 bytes padding
+
     state->players = (Snake*)malloc(sizeof(Snake) * state->player_count);
 
-    serialf("[debug] starting to decompress >\n");
+    serialf("[debug] decompressed player count: %d\n", state->player_count);
+
     for (int i = 0; i < state->player_count; i++) {
         Snake* s = &state->players[i];
 
-        uint8_t uuid_len = READ_VAL(cursor, uint8_t);
-        s->uuid = (char*)malloc(uuid_len + 1);
-        memcpy(s->uuid, read_and_advance(&cursor, uuid_len), uuid_len);
-        s->uuid[uuid_len] = '\0'; // Null terminate
-        serialf("[debug] created snake w/ uuid %s\n", s->uuid);
-        s->x = read_float_be(&cursor);
-        s->y = read_float_be(&cursor);
+        // 2. UUID
+        uint8_t uuid_len;
+        safe_read(&cursor, &uuid_len, sizeof(uint8_t));
         
-        serialf("[debug] successfully scanned x=%f and y=%f",
-            s->x, s->y
-        );
-        uint16_t raw_angle = read_short_be(&cursor);
-        s->angle = ((float)raw_angle / 65535.0f) * (2.0f * M_PI); // Unmap
-       
-        serialf("[debug] successfully scanned angle=%f", s->angle);
+        s->uuid = (char*)malloc(uuid_len + 1);
+        safe_read(&cursor, s->uuid, uuid_len);
+        s->uuid[uuid_len] = '\0'; // Null terminate
+        
+        // Skip Variable Padding (Align to 4)
+        // Calculation: (4 - (1 + len) % 4) % 4
+        int current_chunk = 1 + uuid_len;
+        int pad_needed = (4 - (current_chunk % 4)) % 4;
+        skip_bytes(&cursor, pad_needed);
 
-        s->boost = READ_VAL(cursor, uint8_t);
-        s->length = read_float_be(&cursor);
-        serialf("[debug] successfully scanned boost=%d and length=%d",
-            s->boost,
-            s->length
-        );
-        s->segment_count = read_short_be(&cursor);
+        // 3. Position (Floats)
+        safe_read(&cursor, &s->x, sizeof(float));
+        safe_read(&cursor, &s->y, sizeof(float));
+
+        // 4. Angle (U16) and Boost (U8)
+        uint16_t raw_angle;
+        safe_read(&cursor, &raw_angle, sizeof(uint16_t));
+        s->angle = ((float)raw_angle / 65535.0f) * (2.0f * M_PI);
+
+        safe_read(&cursor, &s->boost, sizeof(uint8_t));
+
+        skip_bytes(&cursor, 1); // Skip 1 byte padding (after Boost)
+
+        // 5. Length (Float)
+        safe_read(&cursor, &s->length, sizeof(float));
+
+        // 6. Segments
+        safe_read(&cursor, &s->segment_count, sizeof(uint16_t));
+        skip_bytes(&cursor, 2); // Skip 2 bytes padding
+
         s->segments = (Vector2*)malloc(sizeof(Vector2) * s->segment_count);
         for (int j = 0; j < s->segment_count; j++) {
-            s->segments[j].x = read_float_be(&cursor);
-            s->segments[j].y = read_float_be(&cursor);
+            safe_read(&cursor, &s->segments[j].x, sizeof(float));
+            safe_read(&cursor, &s->segments[j].y, sizeof(float));
         }
     }
 
-    state->food_count = read_short_be(&cursor);
+    // 7. Food
+    safe_read(&cursor, &state->food_count, sizeof(uint16_t));
+    skip_bytes(&cursor, 2); // Skip 2 bytes padding
+
     state->foods = (Food*)malloc(sizeof(Food) * state->food_count);
 
     for (int i = 0; i < state->food_count; i++) {
-        state->foods[i].x = read_float_be(&cursor);
-        state->foods[i].y = read_float_be(&cursor);
-        state->foods[i].size = READ_VAL(cursor, uint8_t);
+        safe_read(&cursor, &state->foods[i].x, sizeof(float));
+        safe_read(&cursor, &state->foods[i].y, sizeof(float));
+        safe_read(&cursor, &state->foods[i].size, sizeof(uint8_t));
+        
+        skip_bytes(&cursor, 3); // Skip 3 bytes padding
     }
 }
-
 const char* debug_state(GameState* state) {
     static char buf[8192];
     buf[0] = '\0';
@@ -182,18 +189,4 @@ const char* debug_state(GameState* state) {
     }
 
     return buf;
-}
-
-// ================= CLEANUP =================
-
-void free_gamestate(GameState* state) {
-    if (!state) return;
-    
-    for (int i = 0; i < state->player_count; i++) {
-        free(state->players[i].uuid);
-        free(state->players[i].segments);
-    }
-    free(state->players);
-    free(state->foods);
-    free(state);
 }

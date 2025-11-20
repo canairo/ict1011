@@ -33,7 +33,7 @@ void setup() {
     display.setFont(thinPixel7_10ptFontInfo);
     display.setCursor(0, 0);
     state = NO_WIFI;
-    GameState* game_state = (GameState*)malloc(sizeof(GameState));
+    game_state = (GameState*)malloc(sizeof(GameState));
     serialf("[debug] allocated game_state at %p\n", game_state);
     delay(2000);
 }
@@ -87,6 +87,10 @@ void loop() {
         serialf("[debug] received game state > \n");
         hexdump(received_packet, packet_size);
         serialf("\n");
+        serialf("[debug] parameters passed: game_state %p, packet_size %d\n",
+            game_state,
+            packet_size
+        );
         decompress_packet_into_game_state(game_state, (uint8_t*)received_packet, packet_size);
         serialf("[debug] successfully decompressed game state\n");
         serialf("%s", debug_state(game_state));
