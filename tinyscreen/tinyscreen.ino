@@ -33,7 +33,7 @@ void setup() {
     display.setFont(thinPixel7_10ptFontInfo);
     display.setCursor(0, 0);
     state = NO_WIFI;
-    game_state = (GameState*)malloc(sizeof(GameState));
+    game_state = (GameState*)calloc(1, sizeof(GameState));
     serialf("[debug] allocated game_state at %p\n", game_state);
     delay(2000);
 }
@@ -91,6 +91,7 @@ void loop() {
             game_state,
             packet_size
         );
+        free_gamestate_contents(game_state); // lmfao kena memory leak
         decompress_packet_into_game_state(game_state, (uint8_t*)received_packet, packet_size);
         serialf("[debug] successfully decompressed game state\n");
         serialf("%s", debug_state(game_state));

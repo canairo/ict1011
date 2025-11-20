@@ -190,3 +190,33 @@ const char* debug_state(GameState* state) {
 
     return buf;
 }
+
+void free_gamestate_contents(GameState* state) {
+    if (!state) return;
+    
+    // 1. Free existing players
+    if (state->players) {
+        for (int i = 0; i < state->player_count; i++) {
+            // Free the dynamically allocated UUID
+            if (state->players[i].uuid) {
+                free(state->players[i].uuid);
+            }
+            // Free the dynamically allocated segments array
+            if (state->players[i].segments) {
+                free(state->players[i].segments);
+            }
+        }
+        // Free the array of Snake structs
+        free(state->players);
+        state->players = NULL;
+    }
+
+    // 2. Free existing food
+    if (state->foods) {
+        free(state->foods);
+        state->foods = NULL;
+    }
+
+    state->player_count = 0;
+    state->food_count = 0;
+}
