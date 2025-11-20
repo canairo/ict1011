@@ -109,7 +109,7 @@ void join_server(WiFiUDP &udp, IPAddress remote_ip) {
   udp.beginPacket(remote_ip, 9999);
   udp.print("{\"type\": \"JOIN\", \"uuid\": \"meowboy\"}");
   udp.endPacket();
-  serialf("[debug] sent JOIN packet to remote %s", ip_to_str(remote_ip));
+  serialf("[debug] sent JOIN packet to remote %s\n", ip_to_str(remote_ip));
 }
 
 bool assert_game_data(char* received_packet) {

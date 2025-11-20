@@ -1,7 +1,7 @@
 #!/bin/bash
 # Set variables
 FQBN="TinyCircuits:samd:tinyscreen"
-PORT="/dev/ttyACM0"   # adjust if needed
+PORT="/dev/ttyACM?"   # adjust if needed
 BUILD_DIR="build"
 
 # Compile

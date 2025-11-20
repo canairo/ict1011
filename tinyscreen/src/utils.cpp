@@ -5,13 +5,7 @@
 #include <string.h>
 
 #define MAXLEN 0x40
-
-template <typename... Args>
-void serialf(const char *fmt, Args... args) {
-  char buf[128];
-  snprintf(buf, sizeof(buf), fmt, args...);
-  SerialUSB.print(buf);
-}
+#include "utils.h"
 
 void debug_msg(char *msg, TinyScreen &display) {
   display.clearScreen();
