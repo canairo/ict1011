@@ -24,6 +24,7 @@ class UDPServer(asyncio.DatagramProtocol):
         try:
             pkt = json.loads(data.decode('utf-8'))
         except Exception:
+            print(f'[SERVER] failed to decode data : {data}')
             return
 
         if pkt.get("type") == "DISCOVER":
@@ -33,7 +34,6 @@ class UDPServer(asyncio.DatagramProtocol):
             return
 
         if pkt.get("type") == "JOIN":
-            # lord above please just forgive me for this fucking nonsense.
             print(f'[SERVER] received a JOIN packet from {addr}')
             self.game.add_player(pkt.get('uuid'))
             self.clients[pkt.get("uuid")] = {"addr": addr}
