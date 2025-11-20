@@ -6,6 +6,17 @@
 
 #include "wifi_handler.h"
 
+typedef enum {
+  NO_WIFI,
+  FINDING_SERVER,
+  CONNECTED_TO_SERVER
+} State;
+
+WiFiUDP udp;
+char received_packet[2048];
+int debug = 0;
+State state;
+
 TinyScreen display = TinyScreen(TinyScreenPlus);
 IPAddress remote_ip = IPAddress(69, 69, 69, 69); // quote unquote sentinel
 
@@ -19,23 +30,47 @@ void setup() {
     display.clearScreen();
     display.setFont(thinPixel7_10ptFontInfo);
     display.setCursor(0, 0);
+    state = NO_WIFI;
     delay(2000);
 }
 
 void loop() {
-    char ReplyBuffer[256];
-    strcpy(ReplyBuffer, "OK\n");
-    char packetBuffer[256];
-    display.clearScreen();
-    display.setCursor(0,0);
-    if (WiFi.status() != WL_CONNECTED) {
-      prompt_and_connect(display);
-    } else if (remote_ip == IPAddress(69, 69, 69, 69)) { 
-      find_server(remote_ip, display);
+  if (state == NO_WIFI) {
+    if (prompt_and_connect(display))  {
+      state = FINDING_SERVER;
+      udp.begin(1000);
     }
-    else {
-      debug_msg("everything's all good!", display);
+    return;
+  }
+
+  int packet_size = udp.parsePacket();
+  if (packet_size) {
+    int read_amt = (packet_size > 2048) ? 2048 : packet_size;
+    int len = udp.read(received_packet, packet_size);
+    if (debug) {
+      serialf("\nreceived packet from %d:%d\n",
+          ip_to_str(udp.remoteIP()),
+          udp.remotePort()
+      );
+      hexdump(received_packet, packet_size);
     }
-    delay(1000);
+  }
+
+  switch (state) {
+    case FINDING_SERVER:
+      broadcast_packet(udp);
+      serialf("current packet > %s\n", received_packet);
+      remote_ip = receive_discover(udp, received_packet);
+      if (remote_ip != IPAddress(69, 69, 69, 69)) {
+        join_server(udp, remote_ip);
+        state = CONNECTED_TO_SERVER;
+      }
+      break;
+
+    case CONNECTED_TO_SERVER:
+      // do stuff here with the packet
+      debug = 1;
+      break;
+  }
 }
 

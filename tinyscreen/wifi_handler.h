@@ -11,10 +11,6 @@
 #define MAXLEN 0x40
 #define WIFITIMEOUT 15000
 
-WiFiUDP udp;
-char packet[256];
-IPAddress broadcast_ip;
-
 bool prompt_and_connect(TinyScreen display) {
     debug_msg("meowing for wifi", display); 
     SerialUSB.println("\nmeowing for networks...");
@@ -30,7 +26,7 @@ bool prompt_and_connect(TinyScreen display) {
     char ssid[MAXLEN] = {0};
     char pass[MAXLEN] = {0};
     for (int i = 0; i < num_networks; i++) {
-      serialf("[%d] %s (RSSI %d) ENC %d", i, WiFi.SSID(i), WiFi.RSSI(i), WiFi.encryptionType(i));
+      serialf("[%d] %s (RSSI %d) ENC %d\n", i, WiFi.SSID(i), WiFi.RSSI(i), WiFi.encryptionType(i));
       for (int j = 0; j < 10; j++) {
         if (!strcmp(WiFi.SSID(i), credentials[j][0])) {
           snprintf(ssid, sizeof(ssid) - 1, "%s", credentials[j][0]);
@@ -86,12 +82,34 @@ bool prompt_and_connect(TinyScreen display) {
     }
 }
 
+void broadcast_packet(WiFiUDP udp) {
+  IPAddress ip = WiFi.localIP();
+  IPAddress mask = WiFi.subnetMask();
+  IPAddress broadcast_ip;
+  for (int i = 0; i<4; i++) {
+    broadcast_ip[i] = (ip[i] & mask[i] | ~mask[i] & 0xFF);
+  }
+  udp.beginPacket(broadcast_ip, 9999);
+  udp.print("{\"type\": \"DISCOVER\", \"uuid\": \"TINYSCR\"}");
+  udp.endPacket();
+}
+
+IPAddress receive_discover(WiFiUDP udp, char* received_packet) {
+  if (strstr(received_packet, "DISCOVER_RECEIVED")) {
+    return udp.remoteIP();
+  }
+  return IPAddress(69, 69, 69, 69); // sentinel
+}
+
+void join_server(WiFiUDP udp, IPAddress remote_ip) {
+  udp.beginPacket(remote_ip, 9999);
+  udp.print("{\"type\": \"JOIN\", \"uuid\": \"meowboy\"}");
+  udp.endPacket();
+}
+
+/* 
 bool find_server(IPAddress &serverIP, TinyScreen display) {
-  udp.begin(1000);
   debug_msg("finding remote server...", display);
-  char packetBuffer[2048];
-  char ReplyBuffer[2048];
-  strcpy(ReplyBuffer, "OK\n");
   IPAddress ip = WiFi.localIP();
   IPAddress mask = WiFi.subnetMask();
   for (int i = 0; i<4; i++) {
@@ -136,3 +154,4 @@ bool find_server(IPAddress &serverIP, TinyScreen display) {
     }
   } 
 }
+*/
