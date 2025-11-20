@@ -6,6 +6,7 @@
 
 #include "wifi_handler.h"
 #include "game_handler.h"
+#include "renderer.h"
 
 typedef enum {
   NO_WIFI,
@@ -95,6 +96,7 @@ void loop() {
         decompress_packet_into_game_state(game_state, (uint8_t*)received_packet, packet_size);
         serialf("[debug] successfully decompressed game state\n");
         serialf("%s", debug_state(game_state));
+        render_game_state(&display, game_state, "meowboy");
       }
       break;
   }

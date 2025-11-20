@@ -11,7 +11,7 @@
 #define MAXLEN 0x40
 #define WIFITIMEOUT 15000
 
-bool prompt_and_connect(TinyScreen display) {
+bool prompt_and_connect(TinyScreen &display) {
     debug_msg("meowing for wifi", display); 
     SerialUSB.println("\n[debug] meowing for networks...");
 
@@ -82,7 +82,7 @@ bool prompt_and_connect(TinyScreen display) {
     }
 }
 
-void broadcast_packet(WiFiUDP udp) {
+void broadcast_packet(WiFiUDP &udp) {
   IPAddress ip = WiFi.localIP();
   IPAddress mask = WiFi.subnetMask();
   IPAddress broadcast_ip;
@@ -94,7 +94,7 @@ void broadcast_packet(WiFiUDP udp) {
   udp.endPacket();
 }
 
-IPAddress receive_discover(WiFiUDP udp, char* received_packet) {
+IPAddress receive_discover(WiFiUDP &udp, char* received_packet) {
   serialf("[debug] scanning packet %s\n", received_packet);
   if (strstr(received_packet, "DISCOVER_RECEIVED")) {
     serialf("[debug] successfully received DISCOVER_RECEIVED packet from %s\n",
@@ -105,7 +105,7 @@ IPAddress receive_discover(WiFiUDP udp, char* received_packet) {
   return IPAddress(69, 69, 69, 69); // sentinel
 }
 
-void join_server(WiFiUDP udp, IPAddress remote_ip) {
+void join_server(WiFiUDP &udp, IPAddress remote_ip) {
   udp.beginPacket(remote_ip, 9999);
   udp.print("{\"type\": \"JOIN\", \"uuid\": \"meowboy\"}");
   udp.endPacket();

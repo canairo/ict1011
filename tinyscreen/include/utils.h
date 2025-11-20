@@ -13,7 +13,7 @@ void serialf(const char *fmt, Args... args) {
   SerialUSB.print(buf);
 }
 
-void debug_msg(char *msg, TinyScreen display) {
+void debug_msg(char *msg, TinyScreen &display) {
   display.clearScreen();
   display.setCursor(0, 0);
   display.println(msg);
@@ -47,5 +47,4 @@ void read_line(char *buffer, int maxLen) {
     }
   }
 }
-
 
