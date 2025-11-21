@@ -4,6 +4,7 @@
 #include <WiFi101.h>
 #include <string.h>
 #include <WiFiUdp.h>
+#include <Wireling.h>
 
 #include "wifi_handler.h"
 #include "game_handler.h"
@@ -20,9 +21,11 @@ typedef enum {
 
 WiFiUDP udp;
 char received_packet[2048];
-int debug = 1;
+int debug = 0;
 State state;
 GameState* game_state;
+
+ButtonInput current_input;
 
 TinyScreen display = TinyScreen(TinyScreenPlus);
 IPAddress remote_ip = IPAddress(69, 69, 69, 69); // quote unquote sentinel
@@ -33,10 +36,8 @@ void setup() {
     Wireling.begin();
     SerialUSB.begin(9600);
     pinMode(A0, INPUT_PULLUP);
-    pinMode(A0, INPUT_PULLUP);
     pinMode(A1, INPUT_PULLUP);
     pinMode(A2, INPUT_PULLUP);
-    pinMode(A3, INPUT_PULLUP); 
     while (!SerialUSB);
     WiFi.setPins(8, 2, A3, -1); // necessary for whatever reason
     display.begin();
@@ -52,7 +53,11 @@ void setup() {
 
 void loop() {
 
-  view_input();
+  // handle inputs
+  ButtonInput current_input = view_input();
+  if (current_input != NO_INPUT) {
+    serialf("[debug] button input is %d\n", current_input);
+  }
 
   if (state == NO_WIFI) {
     if (prompt_and_connect(display))  {
@@ -72,27 +77,22 @@ void loop() {
           udp.remotePort()
       );
       hexdump(received_packet, packet_size);
-      serialf("\n------\n");
+      serialf("\n------\n[debug] string form: %s\n", received_packet);
     }
   } else {
-
     // i would want to clear the entire buffer
     // but i am worried that would take too long
     // so we just set the first byte as null
     // happy happy liao
     received_packet[0] = 0;
-
   }
-
+  
   switch (state) {
     case FINDING_SERVER:
       broadcast_packet(udp);
       remote_ip = receive_discover(udp, received_packet);
       if (remote_ip != IPAddress(69, 69, 69, 69)) {
         join_server(udp, remote_ip);
-        serialf("[debug] found remote ip at %s\n",
-          ip_to_str(remote_ip)
-        );
         state = CONNECTED_TO_SERVER;
       }
       break;
