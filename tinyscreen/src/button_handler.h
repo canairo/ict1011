@@ -4,8 +4,8 @@
 typedef enum {
   NO_INPUT,
   INPUT_BOOST,
-  INPUT_RIGHT,
   INPUT_LEFT,
+  INPUT_RIGHT,
 } ButtonInput;
 
 ButtonInput view_input();

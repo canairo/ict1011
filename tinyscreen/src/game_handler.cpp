@@ -41,9 +41,6 @@ void decompress_packet_into_game_state(GameState* state, uint8_t* data, size_t l
     skip_bytes(&cursor, 2); // Skip 2 bytes padding
 
     state->players = (Snake*)malloc(sizeof(Snake) * state->player_count);
-
-    serialf("[debug] decompressed player count: %d\n", state->player_count);
-
     for (int i = 0; i < state->player_count; i++) {
         Snake* s = &state->players[i];
 
@@ -118,9 +115,24 @@ void populate_input_packet(char *input_packet, GameState *game_state, ButtonInpu
     int idx = get_snake_by_uuid(game_state, uuid);
     if (idx >= 0) {
       float current_angle = game_state->players[idx].angle;
-      serialf("[debug] snake with uuid %s has current angle %f\n");
-    } else {
-      serialf("[debug] no snake with uuid %s found.\n", uuid);
+      bool boost = 0;
+      switch (current_input) {
+        case INPUT_LEFT:
+          current_angle += 0.2;
+          break;
+        case INPUT_RIGHT:
+          current_angle -= 0.2;
+          break;
+        case INPUT_BOOST:
+          boost = 1;
+          break;
+      }
+      serialf("[debug] attempting to write boost: %d and angle %f\n", boost, current_angle);
+      InputPacket *inp = (InputPacket*) input_packet;
+      inp->angle = current_angle;
+      inp->boost = boost;
+      snprintf(inp->type, sizeof(inp->type), "INPUT");
+      snprintf(inp->uuid, sizeof(inp->uuid), "meowboy");
     }
 }
 

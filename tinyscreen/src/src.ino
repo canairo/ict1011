@@ -27,7 +27,7 @@ State state;
 GameState* game_state;
 
 ButtonInput current_input;
-char input_packet[256];
+char input_packet[sizeof(InputPacket)];
 
 TinyScreen display = TinyScreen(TinyScreenPlus);
 IPAddress remote_ip = IPAddress(69, 69, 69, 69); // quote unquote sentinel
@@ -113,6 +113,9 @@ void loop() {
       // handle inps
       if (current_input != NO_INPUT) {
         populate_input_packet(input_packet, game_state, current_input, "meowboy");
+        serialf("[debug] populated input packet > ");
+        hexdump(input_packet, sizeof(InputPacket));
+        serialf("\n");
       }
       break;
   }

@@ -41,6 +41,13 @@ typedef struct {
     Food* foods;       // Array of Food
 } GameState;
 
+typedef struct {
+    char type[8];
+    char uuid[16];
+    float angle;
+    int boost;
+} InputPacket;
+
 void safe_read(uint8_t** cursor, void* dest, size_t size);
 void skip_bytes(uint8_t** cursor, size_t size);
 void decompress_packet_into_game_state(GameState* state, uint8_t* data, size_t len);
