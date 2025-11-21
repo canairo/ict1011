@@ -26,8 +26,9 @@ class UDPServer(asyncio.DatagramProtocol):
         self.transport = transport
 
     def datagram_received(self, data, addr):
+        if b'meowboy' in data:
+            print(f'[SERVER] recvd {data}')
         pkt = None
-        # Try JSON first
         try:
             pkt = json.loads(data.decode('utf-8'))
         except (UnicodeDecodeError, json.JSONDecodeError):
@@ -38,6 +39,7 @@ class UDPServer(asyncio.DatagramProtocol):
             try:
                 if len(data) == struct.calcsize(INPUT_STRUCT_FMT):
                     raw_type, raw_uuid, angle, boost = struct.unpack(INPUT_STRUCT_FMT, data)
+        # Try JSON first
                     str_type = raw_type.decode('utf-8', errors='ignore').rstrip('\x00')
                     str_uuid = raw_uuid.decode('utf-8', errors='ignore').rstrip('\x00')
                     pkt = {

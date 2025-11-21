@@ -11,6 +11,9 @@ UUID = str(uuid.uuid4())
 WIN_W, WIN_H = 1200, 800
 FPS = 60
 
+# World Constants (Must match Server/Core)
+MAP_SIZE = 3000
+
 # Colors
 BG_COLOR = (20, 20, 25)
 PLAYER_COLOR = (180, 30, 50)   # dark blood red
@@ -45,8 +48,6 @@ class UDPClient(asyncio.DatagramProtocol):
         except Exception:
             return
         
-        print(f"[CLIENT] Received state with {len(self.state.get('players', {}))} players")
-
     def send(self, packet: dict):
         """Helper to send JSON packets"""
         if not self.transport:
@@ -78,20 +79,35 @@ def draw_void_bg(screen, t):
     pygame.draw.circle(screen, (pulse, 0, 0), (w // 2, h // 2), int(300 + 40 * math.sin(t * 0.6)), width=1)
 
 def draw_red_aura(screen, x, y, r, t):
+    # Only draw if on screen to save performance
+    if x < -50 or x > WIN_W + 50 or y < -50 or y > WIN_H + 50:
+        return
+        
     pulse = 1 + 0.25 * math.sin(t * 6)
     radius = int(r * pulse) + 3
     pygame.draw.circle(screen, (150, 0, 0), (x, y), radius, width=2)
 
-# Rendering of Obejcts
+# Rendering of Objects
 def draw_snake(screen, segments, color, cam_x, cam_y):
     if len(segments) < 2:
         return
+    
+    # Iterate through segments
     for i in range(len(segments) - 1):
         x1, y1 = segments[i]
         x2, y2 = segments[i + 1]
 
         dx = x2 - x1
         dy = y2 - y1
+
+        # --- FIX: WRAP DETECTION ---
+        # If the distance between two consecutive segments is huge,
+        # it means they wrapped around the world border.
+        # We skip drawing the interpolated line between them.
+        if abs(dx) > MAP_SIZE / 2 or abs(dy) > MAP_SIZE / 2:
+            continue
+        # ---------------------------
+
         dist = math.hypot(dx, dy)
 
         # number of mini circles between actual server segments
@@ -116,11 +132,15 @@ def draw_game(screen, state, cam_x, cam_y):
 
     if state is None:
         return
+    
     # Food
     for f in state["food"]:
         fx = int(f["x"] - cam_x)
         fy = int(f["y"] - cam_y)
-        pygame.draw.circle(screen, FOOD_COLOR, (fx, fy), f["size"])
+        
+        # Simple bounds check for rendering
+        if -50 <= fx <= WIN_W + 50 and -50 <= fy <= WIN_H + 50:
+            pygame.draw.circle(screen, FOOD_COLOR, (fx, fy), f["size"])
 
     # Snakes
     for uid, snake in state["players"].items():
@@ -128,6 +148,7 @@ def draw_game(screen, state, cam_x, cam_y):
         body_color = PLAYER_COLOR if uid == UUID else OTHER_COLOR
         segments = snake["segments"]
         draw_snake(screen, segments, body_color, cam_x, cam_y)
+        
         # Head
         hx = int(snake["x"] - cam_x)
         hy = int(snake["y"] - cam_y)
@@ -137,6 +158,7 @@ def draw_game(screen, state, cam_x, cam_y):
 async def run_game():
     pygame.init()
     screen = pygame.display.set_mode((WIN_W, WIN_H))
+    pygame.display.set_caption("Slither Client")
     clock = pygame.time.Clock()
 
     loop = asyncio.get_running_loop()
@@ -170,8 +192,23 @@ async def run_game():
             # camera follow
             if protocol.state and UUID in protocol.state["players"]:
                 me = protocol.state["players"][UUID]
-                cam_x = me["x"] - WIN_W / 2
-                cam_y = me["y"] - WIN_H / 2
+                
+                # Smooth camera lerp
+                target_x = me["x"] - WIN_W / 2
+                target_y = me["y"] - WIN_H / 2
+                
+                # Handle camera wrap-around snapping 
+                # (Optional: keeps camera smooth if player crosses border, 
+                # though simple following is usually fine for this complexity)
+                if abs(target_x - cam_x) > MAP_SIZE / 2:
+                    cam_x = target_x
+                else:
+                    cam_x += (target_x - cam_x) * 0.1
+                
+                if abs(target_y - cam_y) > MAP_SIZE / 2:
+                    cam_y = target_y
+                else:
+                    cam_y += (target_y - cam_y) * 0.1
 
             draw_game(screen, protocol.state, cam_x, cam_y)
             pygame.display.flip()
