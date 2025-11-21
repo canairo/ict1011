@@ -22,6 +22,7 @@ typedef enum {
 WiFiUDP udp;
 unsigned long last_broadcast = 0;
 unsigned long last_input = 0;
+unsigned long last_packet_recv = 0;
 char received_packet[2048];
 int debug = 0;
 State state;
@@ -74,6 +75,7 @@ void loop() {
   if (packet_size) {
     int read_amt = (packet_size > 2048) ? 2048 : packet_size;
     int len = udp.read(received_packet, packet_size);
+    last_packet_recv = millis();
     /*
     if (debug) {
       serialf("\n[debug] received packet from %s:%d\n------\n",
@@ -90,6 +92,12 @@ void loop() {
     // so we just set the first byte as null
     // happy happy liao
     received_packet[0] = 0;
+    if ((millis() - last_packet_recv > 500) && (state == CONNECTED_TO_SERVER)) {
+      serialf("[DEBUG] haven't received a packet for over 500ms\n");
+      debug_msg("kena!!!!", display);
+      state = NO_WIFI;
+      return;
+    }
   }
  
   switch (state) {
@@ -114,9 +122,6 @@ void loop() {
       // handle inps
       if (current_input != NO_INPUT) {
         populate_input_packet(input_packet, game_state, current_input, "meowboy");
-        serialf("[debug] populated input packet > ");
-        hexdump(input_packet, sizeof(InputPacket));
-        serialf("\n");
         if (millis() - last_input > 50) {
         send_binary_packet(udp, remote_ip, 9999, input_packet, sizeof(InputPacket));
         serialf("[debug] sending input packet...\n");
