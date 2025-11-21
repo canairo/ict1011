@@ -107,7 +107,7 @@ void decompress_packet_into_game_state(GameState* state, uint8_t* data, size_t l
 // returns an idx
 int get_snake_by_uuid(GameState *game_state, char* uuid) {
   for (int i = 0; i < game_state->player_count; i++) {
-     if (!strcmp(game_state->players[i]->uuid, uuid)) {
+     if (!strcmp(game_state->players[i].uuid, uuid)) {
        return i;
      }
   }
@@ -117,7 +117,7 @@ int get_snake_by_uuid(GameState *game_state, char* uuid) {
 void populate_input_packet(char *input_packet, GameState *game_state, ButtonInput current_input, char* uuid) {
     int idx = get_snake_by_uuid(game_state, uuid);
     if (idx >= 0) {
-      float current_angle = game_state->players[idx]->angle;
+      float current_angle = game_state->players[idx].angle;
       serialf("[debug] snake with uuid %s has current angle %f\n");
     } else {
       serialf("[debug] no snake with uuid %s found.\n", uuid);

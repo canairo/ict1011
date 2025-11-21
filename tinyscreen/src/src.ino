@@ -49,7 +49,7 @@ void setup() {
     display.setCursor(0, 0);
     state = NO_WIFI;
     game_state = (GameState*)calloc(1, sizeof(GameState));
-    serialf("[debug] allocated game_state at %p\n", game_state);
+    serialf("[debug] meow meow woof woof game_state at %p\n", game_state);
     delay(2000);
 }
 
@@ -73,6 +73,7 @@ void loop() {
   if (packet_size) {
     int read_amt = (packet_size > 2048) ? 2048 : packet_size;
     int len = udp.read(received_packet, packet_size);
+    /*
     if (debug) {
       serialf("\n[debug] received packet from %s:%d\n------\n",
           ip_to_str(udp.remoteIP()),
@@ -81,6 +82,7 @@ void loop() {
       hexdump(received_packet, packet_size);
       serialf("\n------\n[debug] string form: %s\n", received_packet);
     }
+    */
   } else {
     // i would want to clear the entire buffer
     // but i am worried that would take too long
@@ -110,7 +112,7 @@ void loop() {
       }
       // handle inps
       if (current_input != NO_INPUT) {
-        populate_input_packet(input_packet, game_state, current_input, uuid);
+        populate_input_packet(input_packet, game_state, current_input, "meowboy");
       }
       break;
   }

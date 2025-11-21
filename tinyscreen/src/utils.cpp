@@ -14,6 +14,7 @@ void debug_msg(char *msg, TinyScreen &display) {
 }
 
 void hexdump(char *buf, int size) {
+  return;
   for (int i = 0; i<size; i++) {
     serialf("%02x", buf[i]);
   }

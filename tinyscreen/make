@@ -5,7 +5,7 @@ PORT="/dev/ttyACM?"   # adjust if needed
 BUILD_DIR="build"
 
 # Compile
-arduino-cli compile --fqbn $FQBN --build-path $BUILD_DIR src/
+arduino-cli compile --clean --fqbn $FQBN --build-path $BUILD_DIR src/
 echo "[making] dont forget to unplug it"
 
 # Upload

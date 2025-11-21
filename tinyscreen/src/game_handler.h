@@ -3,6 +3,8 @@
 #include <string.h>
 #include <stdint.h>
 #include <math.h>
+#include "button_handler.h"
+
 
 #ifndef GAME_HANDLER_H
 #define GAME_HANDLER_H
