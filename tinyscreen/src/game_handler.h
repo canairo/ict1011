@@ -44,5 +44,5 @@ void skip_bytes(uint8_t** cursor, size_t size);
 void decompress_packet_into_game_state(GameState* state, uint8_t* data, size_t len);
 const char* debug_state(GameState* state);
 void free_gamestate_contents(GameState* state);
-
+void populate_input_packet(char *input_packet, GameState *game_state, ButtonInput current_input, char* uuid);
 #endif // GAME_HANDLER_H

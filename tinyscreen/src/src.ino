@@ -26,6 +26,7 @@ State state;
 GameState* game_state;
 
 ButtonInput current_input;
+char input_packet[256];
 
 TinyScreen display = TinyScreen(TinyScreenPlus);
 IPAddress remote_ip = IPAddress(69, 69, 69, 69); // quote unquote sentinel
@@ -102,6 +103,10 @@ void loop() {
         free_gamestate_contents(game_state); // lmfao kena memory leak
         decompress_packet_into_game_state(game_state, (uint8_t*)received_packet, packet_size);
         render_game_state(&display, game_state, "meowboy");
+      }
+      // handle inps
+      if (current_input != NO_INPUT) {
+        populate_input_packet(input_packet, game_state, current_input, uuid);
       }
       break;
   }

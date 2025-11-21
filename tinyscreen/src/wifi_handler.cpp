@@ -82,6 +82,12 @@ bool prompt_and_connect(TinyScreen &display) {
     }
 }
 
+void send_packet(WiFiUDP &udp, IPAddress addr, int port, char* packet) {
+  udp.beginPacket(addr, port);
+  udp.print(packet);
+  udp.endPacket();
+}
+
 void broadcast_packet(WiFiUDP &udp) {
   IPAddress ip = WiFi.localIP();
   IPAddress mask = WiFi.subnetMask();
@@ -89,9 +95,7 @@ void broadcast_packet(WiFiUDP &udp) {
   for (int i = 0; i<4; i++) {
     broadcast_ip[i] = (ip[i] & mask[i] | ~mask[i] & 0xFF);
   }
-  udp.beginPacket(broadcast_ip, 9999);
-  udp.print("{\"type\": \"DISCOVER\", \"uuid\": \"TINYSCR\"}");
-  udp.endPacket();
+  send_packet(udp, broadcast_ip, 9999, "{\"type\": \"DISCOVER\", \"uuid\": \"meowboy\"}");
 }
 
 IPAddress receive_discover(WiFiUDP &udp, char* received_packet) {
@@ -106,9 +110,7 @@ IPAddress receive_discover(WiFiUDP &udp, char* received_packet) {
 }
 
 void join_server(WiFiUDP &udp, IPAddress remote_ip) {
-  udp.beginPacket(remote_ip, 9999);
-  udp.print("{\"type\": \"JOIN\", \"uuid\": \"meowboy\"}");
-  udp.endPacket();
+  send_packet(udp, broadcast_ip, 9999, "{\"type\": \"JOIN\", \"uuid\": \"meowboy\"}");
   serialf("[debug] sent JOIN packet to remote %s\n", ip_to_str(remote_ip));
 }
 
