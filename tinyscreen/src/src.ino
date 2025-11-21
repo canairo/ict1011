@@ -20,6 +20,7 @@ typedef enum {
 } State;
 
 WiFiUDP udp;
+unsigned long last_broadcast = 0;
 char received_packet[2048];
 int debug = 0;
 State state;
@@ -87,10 +88,13 @@ void loop() {
     // happy happy liao
     received_packet[0] = 0;
   }
-  
+ 
   switch (state) {
     case FINDING_SERVER:
-      broadcast_packet(udp);
+      if (millis() - last_broadcast > 1000) {
+        broadcast_packet(udp);
+        last_broadcast = millis();
+      }
       remote_ip = receive_discover(udp, received_packet);
       if (remote_ip != IPAddress(69, 69, 69, 69)) {
         join_server(udp, remote_ip);

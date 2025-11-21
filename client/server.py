@@ -23,16 +23,12 @@ class UDPServer(asyncio.DatagramProtocol):
     def datagram_received(self, data, addr):
         try:
             pkt = json.loads(data.decode('utf-8'))
+            print(f'[SERVER] received pkt {pkt}')
         except Exception:
             print(f'[SERVER] failed to decode data : {data}')
             return
 
-        if pkt.get("type") == "DISCOVER":
-            print(f"[SERVER] received a DISCOVER pkt from {addr}")
-            resp = json.dumps({"type": "DISCOVER_RECEIVED"}).encode()
-            self.transport.sendto(resp, addr)
-            return
-
+   
         if pkt.get("type") == "JOIN":
             print(f'[SERVER] received a JOIN packet from {addr}')
             self.game.add_player(pkt.get('uuid'))
@@ -40,6 +36,11 @@ class UDPServer(asyncio.DatagramProtocol):
             self.clients[pkt.get("uuid")]["last_updated"] = time.time()
             return
 
+        if pkt.get("type") == "DISCOVER":
+            print(f"[SERVER] received a DISCOVER pkt from {addr}")
+            resp = json.dumps({"type": "DISCOVER_RECEIVED"}).encode()
+            self.transport.sendto(resp, addr)
+            return
         self.clients[pkt.get("uuid")] = {"addr": addr}
         self.pending_packets.append(pkt)
 
