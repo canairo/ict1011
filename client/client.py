@@ -43,6 +43,9 @@ class UDPClient(asyncio.DatagramProtocol):
         asyncio.create_task(self.send_input_loop())
 
     def datagram_received(self, data, addr):
+        if b"DEAD" in data:
+            import sys
+            sys.exit(0)
         try:
             self.state = json.loads(data.decode("utf-8"))
         except Exception:

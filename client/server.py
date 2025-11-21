@@ -96,7 +96,6 @@ class UDPServer(asyncio.DatagramProtocol):
         while True:
             await asyncio.sleep(0.016)
 
-            # 1. Process Inputs
             for packet in self.pending_packets:
                 uid = packet.get("uuid")
                 if uid in self.clients and not self.clients[uid]["is_spectator"]:
@@ -104,7 +103,6 @@ class UDPServer(asyncio.DatagramProtocol):
                     if packet.get('type') == "INPUT":
                         self.game.input(uid, packet.get('inp'))
 
-            # 2. Remove Inactive Users
             inactive_users = []
             for uid, client in self.clients.items():
                 if time.time() - client["last_updated"] > TIMEOUT_LIMIT:
@@ -119,16 +117,19 @@ class UDPServer(asyncio.DatagramProtocol):
 
             self.pending_packets = []
             
-            # 3. Game Tick
-            self.game.tick()
+            dead_players = self.game.tick()
+
+            for dead_uid in dead_players:
+                if dead_uid in self.clients:
+                    client = self.clients[dead_uid]
+                    dead_msg = json.dumps({"type": "DEAD"}).encode('utf-8')
+                    self.transport.sendto(dead_msg, client['addr'])
+                    del self.clients[dead_uid]
+
             state_snapshot = self.game.state()
-            
-            # 4. Broadcast
-            # Optimize: Encode JSON once for standard clients
             json_payload = json.dumps(state_snapshot).encode('utf-8')
 
             for uid, client in self.clients.items():
-                # Use compressed packets for specific user if module exists
                 if uid == "meowboy" and packets:
                     out_data = packets.compress_packet(state_snapshot)
                 else:

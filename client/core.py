@@ -157,77 +157,90 @@ class Game:
         self.players = {}  # uuid -> Snake
         self.food = [Food() for _ in range(FOOD_COUNT)]
 
-    # -------------------------------------------------
     def add_player(self, uuid):
         if uuid not in self.players:
             self.players[uuid] = Snake(uuid)
 
-    # -------------------------------------------------
     def remove_player(self, uuid):
         if uuid in self.players:
             del self.players[uuid]
 
-    # -------------------------------------------------
     def input(self, uuid, inp):
-        """Store input for a given snake, but do NOT advance the game."""
         if uuid in self.players:
             self.players[uuid].apply_input(inp)
 
-    # -------------------------------------------------
     def tick(self):
-        """Advance game by 1 tick: movement, food collisions, snake collisions."""
+        """
+        Advance game by 1 tick.
+        Returns: list of UUIDs that died this tick.
+        """
+        dead_uuids = []
 
-        # -------- movement --------
+        # 1. Movement
         for s in list(self.players.values()):
             if not s.dead:
                 s.simulate()
 
-        # -------- food collisions --------
+        # 2. Food Collisions
         for s in list(self.players.values()):
-            if s.dead:
-                continue
+            if s.dead: continue
             eaten = []
             for f in self.food:
-                if distance((s.x, s.y), (f.x, f.y)) <= 15:
+                # Collision radius for food
+                if distance((s.x, s.y), (f.x, f.y)) <= (s.speed + 10): 
                     eaten.append(f)
             for f in eaten:
                 self.food.remove(f)
                 s.target_length_units += GROW_PER_FOOD * SEGMENT_SPACING
 
-        # maintain food count
+        # Respawn food
         while len(self.food) < FOOD_COUNT:
             self.food.append(Food())
 
-        # -------- snake collisions --------
+        # 3. Snake Collisions
         all_snakes = list(self.players.values())
         for a in all_snakes:
-            if a.dead:
-                continue
+            if a.dead: continue
+            
             head = (a.x, a.y)
+            
             for b in all_snakes:
-                if a is b:
+                # In Slither-style games, you usually can't kill yourself,
+                # so we skip if a is b.
+                if a is b: 
                     continue
-                segs = b.segments()[3:]
+
+                # Check collision against b's body segments
+                # We skip a few segments near the head to prevent cheap head-to-head kills
+                # or lag-induced overlaps.
+                segs = b.segments()
+                
                 for pos in segs:
-                    if distance(head, pos) < 6:
+                    # If head is close to a body segment
+                    if distance(head, pos) < 8: 
                         a.dead = True
                         break
+                
                 if a.dead:
                     break
 
-        # turn dead snakes into food
+        # 4. Process Deaths
         for s in list(self.players.values()):
             if s.dead:
+                dead_uuids.append(s.uuid)
+                
+                # Turn dead snake body into food
                 segs = s.segments()
-                for (x, y) in segs[::8]:
+                # Drop food every few segments so it's not too dense
+                for (x, y) in segs[::4]: 
                     self.food.append(Food(x, y))
+                
                 self.remove_player(s.uuid)
 
-    # -------------------------------------------------
+        return dead_uuids
+
     def state(self):
-        """Return full game state as a network-friendly dictionary."""
         return {
             "players": {uuid: s.as_dict() for uuid, s in self.players.items()},
             "food": [f.as_dict() for f in self.food],
         }
-

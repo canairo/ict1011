@@ -118,10 +118,10 @@ void populate_input_packet(char *input_packet, GameState *game_state, ButtonInpu
       bool boost = 0;
       switch (current_input) {
         case INPUT_LEFT:
-          current_angle += 0.2;
+          current_angle += 0.5;
           break;
         case INPUT_RIGHT:
-          current_angle -= 0.2;
+          current_angle -= 0.5;
           break;
         case INPUT_BOOST:
           boost = 1;
