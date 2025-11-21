@@ -19,7 +19,7 @@ import random
 from collections import deque
 
 # ================= CONFIG =================
-WIDTH, HEIGHT = 5000, 5000
+WIDTH, HEIGHT = 3000, 3000
 SEGMENT_SPACING = 6
 BASE_SPEED = 4.0
 BOOST_MULT = 2.3
