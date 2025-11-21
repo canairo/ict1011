@@ -21,6 +21,7 @@ typedef enum {
 
 WiFiUDP udp;
 unsigned long last_broadcast = 0;
+unsigned long last_input = 0;
 char received_packet[2048];
 int debug = 0;
 State state;
@@ -116,6 +117,11 @@ void loop() {
         serialf("[debug] populated input packet > ");
         hexdump(input_packet, sizeof(InputPacket));
         serialf("\n");
+        if (millis() - last_input > 50) {
+        send_binary_packet(udp, remote_ip, 9999, input_packet, sizeof(InputPacket));
+        serialf("[debug] sending input packet...\n");
+        last_input = millis();
+        }
       }
       break;
   }

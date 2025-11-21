@@ -88,6 +88,12 @@ void send_packet(WiFiUDP &udp, IPAddress addr, int port, char* packet) {
   udp.endPacket();
 }
 
+void send_binary_packet(WiFiUDP &udp, IPAddress addr, int port, char* packet, int size) {
+  udp.beginPacket(addr, port);
+  udp.write(packet, size);
+  udp.endPacket();
+}
+
 void broadcast_packet(WiFiUDP &udp) {
   IPAddress ip = WiFi.localIP();
   IPAddress mask = WiFi.subnetMask();

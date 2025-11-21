@@ -2,6 +2,7 @@ from core import Game
 import uuid
 import asyncio
 import json
+import struct  # <--- ADD THIS
 from socket import *
 import time
 import packets
@@ -9,6 +10,7 @@ import packets
 gen_uuid = lambda: str(uuid.uuid4())
 game = Game()
 TIMEOUT_LIMIT = 10
+INPUT_STRUCT_FMT = '<8s16sfi' # Little endian, 32 bytes total
 
 class UDPServer(asyncio.DatagramProtocol):
     def __init__(self, game):
@@ -21,14 +23,35 @@ class UDPServer(asyncio.DatagramProtocol):
         self.transport = transport
 
     def datagram_received(self, data, addr):
+        print(f'[SERVER] received data {data}')
+        pkt = None
         try:
             pkt = json.loads(data.decode('utf-8'))
-            print(f'[SERVER] received pkt {pkt}')
-        except Exception:
-            print(f'[SERVER] failed to decode data : {data}')
-            return
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            pass
 
-   
+        if pkt is None:
+            try:
+                if len(data) == struct.calcsize(INPUT_STRUCT_FMT):
+                    raw_type, raw_uuid, angle, boost = struct.unpack(INPUT_STRUCT_FMT, data)
+                    str_type = raw_type.decode('utf-8', errors='ignore').rstrip('\x00')
+                    str_uuid = raw_uuid.decode('utf-8', errors='ignore').rstrip('\x00')
+                    pkt = {
+                        "type": str_type,
+                        "uuid": str_uuid,
+                        "inp": {
+                            "angle": angle,
+                            "boost": bool(boost)
+                        }
+                    }
+                    print(f'[SERVER] successfully parsed pkt {pkt}')
+                else:
+                    print(f'[SERVER] received unknown binary data of len {len(data)} from {addr}')
+                    return
+            except Exception as e:
+                print(f'[SERVER] failed to decode binary data: {e}')
+                return
+
         if pkt.get("type") == "JOIN":
             print(f'[SERVER] received a JOIN packet from {addr}')
             self.game.add_player(pkt.get('uuid'))
@@ -41,15 +64,20 @@ class UDPServer(asyncio.DatagramProtocol):
             resp = json.dumps({"type": "DISCOVER_RECEIVED"}).encode()
             self.transport.sendto(resp, addr)
             return
-        self.clients[pkt.get("uuid")] = {"addr": addr}
-        self.pending_packets.append(pkt)
+
+        uuid_key = pkt.get("uuid")
+        if uuid_key:
+            self.clients[uuid_key] = {"addr": addr}
+            self.pending_packets.append(pkt)
 
     async def tick_loop(self):
         while True:
             await asyncio.sleep(0.016)
 
             for packet in self.pending_packets:
-                self.clients[packet.get("uuid")]["last_updated"] = time.time()
+                if packet.get("uuid") in self.clients:
+                    self.clients[packet.get("uuid")]["last_updated"] = time.time()
+                
                 match packet.get('type'):
                     case "INPUT":
                         self.game.input(packet.get('uuid'), packet.get('inp'))
@@ -61,24 +89,25 @@ class UDPServer(asyncio.DatagramProtocol):
                 if time_elapsed > TIMEOUT_LIMIT:
                     inactive_users.append(client)
 
-            # why this loop not integrated sia ^
             for user in inactive_users:
                 del self.clients[user]
                 self.game.remove_player(user)
-                print(f'[SERVER] {user} hasn\'t sent a message in 10 seconds, deleted...')
+                print(f'[SERVER] {user} hasn\'t sent a message in {TIMEOUT_LIMIT} seconds, deleted...')
 
             self.pending_packets = []
             self.game.tick()
-            state_packet = json.dumps(self.game.state())
+            
+            state_snapshot = self.game.state()
+            
             for client in self.clients:
-                print(f'{time.time()} [SERVER] sending to {client} at {self.clients[client]['addr']} {len(state_packet)}')
+                client_addr = self.clients[client]['addr']
+                
                 if client == "meowboy":
-                    state_packet = packets.compress_packet(self.game.state())
-                    print(f'[SERVER] sending compressed packet w/ len {len(state_packet)}')
+                    out_data = packets.compress_packet(state_snapshot)
                 else:
-                    print(type(state_packet), state_packet)
-                    state_packet = state_packet.encode() if type(state_packet) == str else state_packet
-                self.transport.sendto(state_packet, self.clients[client]['addr'])
+                    out_data = json.dumps(state_snapshot).encode('utf-8')
+                
+                self.transport.sendto(out_data, client_addr)
 
 async def main():
     from core import Game
