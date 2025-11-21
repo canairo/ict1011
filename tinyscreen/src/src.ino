@@ -10,6 +10,7 @@
 #include "renderer.h"
 #include "utils.h"
 #include "wifi_secrets.h"
+#include "button_handler.h"
 
 typedef enum {
   NO_WIFI,
@@ -27,8 +28,15 @@ TinyScreen display = TinyScreen(TinyScreenPlus);
 IPAddress remote_ip = IPAddress(69, 69, 69, 69); // quote unquote sentinel
 
 void setup() {
+    // i want to clean this up actually
     Wire.begin();
+    Wireling.begin();
     SerialUSB.begin(9600);
+    pinMode(A0, INPUT_PULLUP);
+    pinMode(A0, INPUT_PULLUP);
+    pinMode(A1, INPUT_PULLUP);
+    pinMode(A2, INPUT_PULLUP);
+    pinMode(A3, INPUT_PULLUP); 
     while (!SerialUSB);
     WiFi.setPins(8, 2, A3, -1); // necessary for whatever reason
     display.begin();
@@ -43,6 +51,9 @@ void setup() {
 }
 
 void loop() {
+
+  view_input();
+
   if (state == NO_WIFI) {
     if (prompt_and_connect(display))  {
       state = FINDING_SERVER;
@@ -88,17 +99,8 @@ void loop() {
 
     case CONNECTED_TO_SERVER:
       if (assert_game_data(received_packet)) {
-        serialf("[debug] received game state > \n");
-        hexdump(received_packet, packet_size);
-        serialf("\n");
-        serialf("[debug] parameters passed: game_state %p, packet_size %d\n",
-            game_state,
-            packet_size
-        );
         free_gamestate_contents(game_state); // lmfao kena memory leak
         decompress_packet_into_game_state(game_state, (uint8_t*)received_packet, packet_size);
-        serialf("[debug] successfully decompressed game state\n");
-        serialf("%s", debug_state(game_state));
         render_game_state(&display, game_state, "meowboy");
       }
       break;
