@@ -195,29 +195,22 @@ def draw_snake(screen, segments, color, cam_x, cam_y, t, show_text=False):
     if len(segments) < 2:
         return
     
-    # 1. Make the snake body continuous in mathematical space
     continuous_chain = unwrap_segments(segments, MAP_SIZE)
 
-    # 2. Determine where the HEAD is on the screen
     head_raw = segments[0]
     head_screen_x, head_screen_y = to_screen(head_raw[0], head_raw[1], cam_x, cam_y)
 
-    # 3. Calculate the offset between the continuous chain's head and the screen head
     chain_head_x, chain_head_y = continuous_chain[0]
     offset_x = head_screen_x - chain_head_x
     offset_y = head_screen_y - chain_head_y
 
-    # 4. Draw segments relative to the screen head
     for i in range(len(continuous_chain) - 1):
-        # Get continuous coordinates
         p1 = continuous_chain[i]
         p2 = continuous_chain[i+1]
         
-        # Project to screen
         s1x, s1y = p1[0] + offset_x, p1[1] + offset_y
         s2x, s2y = p2[0] + offset_x, p2[1] + offset_y
 
-        # Interpolate circles between segments
         dx, dy = s2x - s1x, s2y - s1y
         dist = math.hypot(dx, dy)
         steps = max(1, int(dist / RENDER_SPACING))
@@ -342,6 +335,8 @@ async def run_game():
     player_name = get_player_name()
     if player_name is None:
         return
+    global UUID
+    UUID = player_name
     
     pygame.init()
     screen = pygame.display.set_mode((WIN_W, WIN_H))

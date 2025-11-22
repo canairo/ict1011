@@ -12,7 +12,7 @@ try:
 except ImportError:
     packets = None
 
-TIMEOUT_LIMIT = 10
+TIMEOUT_LIMIT = 50
 INPUT_STRUCT_FMT = '<8s16sfi' # Little endian, 32 bytes total
 
 class UDPServer(asyncio.DatagramProtocol):
