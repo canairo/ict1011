@@ -240,15 +240,12 @@ async def run_game():
                     cam_x, cam_y = target_x, target_y
                     initialized_cam = True
                 else:
-                    # 1. Calculate shortest vector to target
                     diff_x = get_shortest_diff(target_x, cam_x, MAP_SIZE)
                     diff_y = get_shortest_diff(target_y, cam_y, MAP_SIZE) # Assuming map is square
 
-                    # 2. Smoothly interpolate camera
                     cam_x += diff_x * 0.1
                     cam_y += diff_y * 0.1
 
-                    # 3. Keep camera coordinate normalized [0, MAP_SIZE]
                     cam_x %= MAP_SIZE
                     cam_y %= MAP_SIZE
 
