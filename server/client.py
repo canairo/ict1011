@@ -35,6 +35,7 @@ class UDPClient(asyncio.DatagramProtocol):
     def connection_made(self, transport):
         self.transport = transport
         print(f"[CLIENT] Connected as UUID {UUID}")
+
         join_pkt = {"type": "JOIN", "uuid": UUID}
         self.send(join_pkt)
 
@@ -65,6 +66,10 @@ class UDPClient(asyncio.DatagramProtocol):
             await asyncio.sleep(0.05)
 
 def get_shortest_diff(target, current, size):
+    """
+    Calculates the shortest distance between two points on a ring.
+    e.g. on size 3000: target 10, current 2990 -> returns +20
+    """
     diff = target - current
     if diff > size / 2:
         diff -= size
@@ -114,15 +119,23 @@ def unwrap_segments(points, mod_x=3000):
 
 def draw_void_bg(screen, cam_x, cam_y, t):
     w, h = screen.get_size()
+    
     grid_sz = 100
+    
     off_x = -cam_x % grid_sz
     off_y = -cam_y % grid_sz
+
     screen.fill(BG_COLOR)
+    
     line_col = (30, 30, 40)
     for x in range(int(off_x), w, grid_sz):
         pygame.draw.line(screen, line_col, (x, 0), (x, h))
     for y in range(int(off_y), h, grid_sz):
         pygame.draw.line(screen, line_col, (0, y), (w, y))
+
+    # Pulsing center effect (optional, fixed to screen center)
+    pulse = 20 + int(10 * math.sin(t * 1.2))
+    pygame.draw.circle(screen, (pulse, 0, 0), (w // 2, h // 2), int(300 + 40 * math.sin(t * 0.6)), width=1)
 
 def draw_red_aura(screen, sx, sy, r, t):
     if sx < -50 or sx > WIN_W + 50 or sy < -50 or sy > WIN_H + 50:
@@ -135,14 +148,11 @@ def draw_snake(screen, segments, color, cam_x, cam_y, t, show_text=False):
     if len(segments) < 2:
         return
 
-    # 1. Make the snake body continuous in mathematical space
     continuous_chain = unwrap_segments(segments, MAP_SIZE)
 
-    # 2. Determine where the HEAD is on the screen
     head_raw = segments[0]
     head_screen_x, head_screen_y = to_screen(head_raw[0], head_raw[1], cam_x, cam_y)
 
-    # 3. Calculate the offset between the continuous chain's head and the screen head
     chain_head_x, chain_head_y = continuous_chain[0]
     offset_x = head_screen_x - chain_head_x
     offset_y = head_screen_y - chain_head_y
@@ -170,16 +180,21 @@ def draw_snake(screen, segments, color, cam_x, cam_y, t, show_text=False):
             draw_red_aura(screen, int(ix), int(iy), BODY_RADIUS, t)
             pygame.draw.circle(screen, color, (int(ix), int(iy)), BODY_RADIUS)
             
+    if show_text:
+        text_surface = font.render(f'{head_raw[0]:.0f},{head_raw[1]:.0f}', False, (255, 255, 255))
+        screen.blit(text_surface, (head_screen_x + 20, head_screen_y - 20))
+
 def draw_game(screen, state, cam_x, cam_y):
     t = pygame.time.get_ticks() * 0.001
     draw_void_bg(screen, cam_x, cam_y, t)
-    text = font.render('kittens.io <3', False, (247, 209, 205))
-    screen.blit(text, (10, 10))
+
     if state is None:
         return
     
+    # Draw Food
     for f in state["food"]:
         fx, fy = to_screen(f["x"], f["y"], cam_x, cam_y)
+        # Simple culling
         if -20 <= fx <= WIN_W + 20 and -20 <= fy <= WIN_H + 20:
             pygame.draw.circle(screen, FOOD_COLOR, (int(fx), int(fy)), f["size"])
 
@@ -191,6 +206,7 @@ def draw_game(screen, state, cam_x, cam_y):
         
         draw_snake(screen, segments, body_color, cam_x, cam_y, t, show_text=is_me)
         
+        # Draw Head independently for emphasis
         hx, hy = to_screen(snake["x"], snake["y"], cam_x, cam_y)
         pygame.draw.circle(screen, HEAD_COLOR, (int(hx), int(hy)), HEAD_RADIUS)
 
@@ -199,8 +215,8 @@ async def run_game():
     screen = pygame.display.set_mode((WIN_W, WIN_H))
     pygame.font.init()
     global font
-    font = pygame.font.Font("LilitaOne-Regular.ttf", 50)
-    pygame.display.set_caption("kittens.io client")
+    font = pygame.font.SysFont("Comic Sans MS", 20)
+    pygame.display.set_caption("kittens.io client (Toroidal)")
     clock = pygame.time.Clock()
 
     loop = asyncio.get_running_loop()
@@ -253,6 +269,10 @@ async def run_game():
                     cam_y %= MAP_SIZE
 
             draw_game(screen, protocol.state, cam_x, cam_y)
+            
+            # UI / Debug
+            fps_txt = font.render(f"FPS: {int(clock.get_fps())} | Cam: {int(cam_x)}, {int(cam_y)}", True, (255,255,255))
+            screen.blit(fps_txt, (10, 10))
             
             pygame.display.flip()
             await asyncio.sleep(0)
