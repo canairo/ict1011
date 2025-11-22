@@ -81,23 +81,17 @@ class Snake:
 
     # called by Game when Game.input(uuid) happens
     def apply_input(self, inp):
-        # does not move the snake yet — stores desired control
-        # expected fields: angle, boost
         if "angle" in inp:
             self.pending_input["angle"] = float(inp["angle"])
         if "boost" in inp:
             self.pending_input["boost"] = bool(inp["boost"])
-
+    
     def simulate(self):
-        # read stored inputs
         if "angle" in self.pending_input:
             desired = self.pending_input["angle"]
             diff = (desired - self.angle + math.pi) % (2 * math.pi) - math.pi
             self.angle += diff * 0.25
-
         boosting = self.pending_input.get("boost", False)
-
-        # boost logic
         if boosting and self.length_units > SEGMENT_SPACING * 8:
             self.speed = BASE_SPEED * BOOST_MULT
             self.length_units -= BOOST_COST
@@ -106,17 +100,11 @@ class Snake:
             self.speed = BASE_SPEED
             self.boosting = False
 
-        # movement
         dx = math.cos(self.angle) * self.speed
         dy = math.sin(self.angle) * self.speed
-
         self.x = wrap_pos(self.x + dx, WIDTH)
         self.y = wrap_pos(self.y + dy, HEIGHT)
-
-        # push new head
         self.positions.appendleft((self.x, self.y))
-
-        # trim history
         max_positions = int(self.target_length_units // SEGMENT_SPACING) + 300
         while len(self.positions) > max_positions:
             self.positions.pop()
@@ -176,12 +164,10 @@ class Game:
         """
         dead_uuids = []
 
-        # 1. Movement
         for s in list(self.players.values()):
             if not s.dead:
                 s.simulate()
 
-        # 2. Food Collisions
         for s in list(self.players.values()):
             if s.dead: continue
             eaten = []
@@ -205,18 +191,12 @@ class Game:
             head = (a.x, a.y)
             
             for b in all_snakes:
-                # In Slither-style games, you usually can't kill yourself,
-                # so we skip if a is b.
                 if a is b: 
                     continue
 
-                # Check collision against b's body segments
-                # We skip a few segments near the head to prevent cheap head-to-head kills
-                # or lag-induced overlaps.
                 segs = b.segments()
                 
                 for pos in segs:
-                    # If head is close to a body segment
                     if distance(head, pos) < 8: 
                         a.dead = True
                         break
