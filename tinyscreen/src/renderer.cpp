@@ -18,11 +18,11 @@
 
 #define ZOOM_FACTOR 0.15 
 
-#define C_BG      0x10 // Dark Grey/Blue
-#define C_ME      0xE0 // Red
-#define C_ME_HEAD 0xFF // Whiteish
-#define C_ENEMY   0x60 // Dark Red
-#define C_FOOD    0xF4 // Pinkish
+#define C_BG      0x00 
+#define C_ME      TS_16b_Gray
+#define C_ME_HEAD TS_16b_Gray
+#define C_ENEMY   0x60 
+#define C_FOOD    0x80
 
 void draw_scaled_dot(TinyScreen *display, int x, int y, int size, uint8_t color) {
     if (x < -10 || x > SCREEN_W + 10 || y < -10 || y > SCREEN_H + 10) return;
@@ -152,7 +152,7 @@ void draw_menu_bitmap(TinyScreen &display, const uint8_t *bitmap) {
       uint8_t packedByte = bitmap[bitmapIndex++];
       for (int bit = 0; bit < 8; bit++) {
         bool isWhite = packedByte & (0x80 >> bit);
-        lineBuffer[(byteOffset * 8) + bit] = isWhite ? 0xFF : 0x00; 
+        lineBuffer[(byteOffset * 8) + bit] = isWhite ? TS_16b_Gray : TS_16b_Blue;
       }
     }
     display.writeBuffer(lineBuffer, 96);
