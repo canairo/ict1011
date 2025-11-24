@@ -24,6 +24,7 @@ unsigned long last_broadcast = 0;
 unsigned long last_input = 0;
 unsigned long last_packet_recv = 0;
 char received_packet[2048];
+bool menu_displayed = false;
 int debug = 0;
 State state;
 GameState* game_state;
@@ -64,6 +65,12 @@ void loop() {
   }
 
   if (state == NO_WIFI) {
+    if (!menu_displayed) {
+      serialf("[debug] showing menu...\n");
+     draw_menu_bitmap(display, menu_bitmap);
+     menu_displayed = true;
+    }
+
     if (prompt_and_connect(display))  {
       state = FINDING_SERVER;
       udp.begin(1000);
@@ -95,7 +102,9 @@ void loop() {
     if ((millis() - last_packet_recv > 500) && (state == CONNECTED_TO_SERVER)) {
       serialf("[DEBUG] haven't received a packet for over 500ms\n");
       debug_msg("kena!!!!", display);
+      menu_displayed = false;
       state = NO_WIFI;
+      delay(2000);
       return;
     }
   }

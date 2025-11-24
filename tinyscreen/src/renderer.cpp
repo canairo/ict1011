@@ -1,5 +1,6 @@
 #include "button_handler.h"
 #include "game_handler.h"
+
 #include <Wire.h>
 #include <SPI.h>
 #include <TinyScreen.h>
@@ -138,4 +139,24 @@ void render_game_state(TinyScreen *display, GameState *state, const char* my_uui
             prev_raw_y = curr_raw_y;
         }
     }
+}
+
+void draw_menu_bitmap(TinyScreen &display, const uint8_t *bitmap) {
+  display.setX(0, 95);
+  display.setY(0, 63);
+  display.startData();
+  uint8_t lineBuffer[96];
+  int bitmapIndex = 0;
+  for (int y = 0; y < 64; y++) {
+    for (int byteOffset = 0; byteOffset < 12; byteOffset++) {
+      uint8_t packedByte = bitmap[bitmapIndex++];
+      for (int bit = 0; bit < 8; bit++) {
+        bool isWhite = packedByte & (0x80 >> bit);
+        lineBuffer[(byteOffset * 8) + bit] = isWhite ? 0xFF : 0x00; 
+      }
+    }
+    display.writeBuffer(lineBuffer, 96);
+  }
+
+  display.endTransfer();
 }

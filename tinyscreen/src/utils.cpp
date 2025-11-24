@@ -8,6 +8,7 @@
 #include "utils.h"
 
 void debug_msg(char *msg, TinyScreen &display) {
+  return;
   display.clearScreen();
   display.setCursor(0, 0);
   display.println(msg);
