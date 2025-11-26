@@ -27,3 +27,7 @@ cd ict1011/client
 python client.py
 ```
 ### 3. Build Application on Tinyscreen
+Run the make file after connecting the tinycircuit
+```bash
+run ./make
+```
