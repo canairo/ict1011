@@ -1,8 +1,29 @@
-# the GameowBoy for the TinyScreen
+# GameowBoy for TinyScreen
+Ever wanted to play games on a screen barely bigger than a fingernail? well now you can!!!!!
 
-ever wanted to play a single really laggy game on a screen barely bigger than a fingernail? well now you can!!!!!
-
-features:
+## Features
   - cross-platform play between computers and the Gameowboy
-  - the most scuffed implementation of slitherio ever created
-  - uhh that's about it
+  - slither.io dupe
+
+## Installation
+
+To set up and run the project locally, follow these steps:
+
+### 1. Install Dependencies
+```bash
+pip install pygame
+```
+
+### 2. Run Application on Computer
+Run the server
+```bash
+cd ict1011/server
+python server.py
+```
+
+Run the client
+```bash
+cd ict1011/client
+python client.py
+```
+### 3. Build Application on Tinyscreen
